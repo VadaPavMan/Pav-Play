@@ -21,6 +21,19 @@ class MainUi(object):
         self.mainLayout = QVBoxLayout()
         self.centralwidget.setLayout(self.mainLayout)
         
+        # Menu Bar
+        self.menuLayout = QHBoxLayout()
+        
+        self.fileButton = QPushButton("File")
+        self.themeButton = QPushButton("Theme")
+        self.optionsButton = QPushButton("Options")
+        
+        self.menuLayout.addWidget(self.fileButton)
+        self.menuLayout.addWidget(self.themeButton)
+        self.menuLayout.addWidget(self.optionsButton)
+        
+        self.mainLayout.addLayout(self.menuLayout)
+        
         # Currently Playing 
         self.songLabel = QLabel(f"Now Playing: {"Lund Playing"}")
         self.songLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
