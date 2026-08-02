@@ -70,17 +70,24 @@ class MainUi(object):
 
         # Navigation Bar
         self.navFrame = QFrame()
-        self.navFrame.setStyleSheet("background: red;")
+        self.navFrame.setStyleSheet("""background-color: #f58442;
+                                       border-radius: 12px;
+                                       """)
         self.mainLayout.addWidget(self.navFrame, 1)
 
         # Media Layout
         self.mediaFrame = QFrame()
-        self.mediaFrame.setStyleSheet("background: white;")
+        self.mediaFrame.setStyleSheet("""
+                                      background-color: #3b3b3b;
+                                      border-radius: 12px;
+                                      """)
         self.mainLayout.addWidget(self.mediaFrame, 8)
 
         # Control Bar
         self.controlsFrame = QFrame()
-        self.controlsFrame.setStyleSheet("background: green;")
+        self.controlsFrame.setStyleSheet("""background-color: #f58442;
+                                       border-radius: 12px;
+                                       """)
         self.mainLayout.addWidget(self.controlsFrame, 2)
 
     def addLabel(self, Text):
