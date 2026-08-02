@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
         self.ui = ui.MainUi()
         self.ui.setup(self)
         self.ui.addLabel("This is the label")
-        self.setWindowTitle("Music Player")
+        self.setWindowTitle("Pav Play")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

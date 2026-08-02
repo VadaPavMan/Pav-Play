@@ -82,12 +82,16 @@ class MainUi(object):
         self.centralWidget.setStyleSheet("background-color: #121212")
         self.MainWindow.setCentralWidget(self.centralWidget)
         self.mainLayout = QVBoxLayout(self.centralWidget)
+        # Spacing & Margins
+        self.mainLayout.setContentsMargins(10, 10, 10, 10)
+        self.mainLayout.setSpacing(10)
     
     def setupNavigationBar(self):
         # Navigation Bar #1E1E1E
         self.navFrame = QFrame()
         self.navFrame.setStyleSheet("""background-color: #C9C9C9;
                                     border-radius: 12px;""")
+        self.navLayout = QHBoxLayout(self.navFrame)
         self.mainLayout.addWidget(self.navFrame, 1)
         
     def setupMediaLayout(self):
