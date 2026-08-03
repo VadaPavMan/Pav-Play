@@ -5,8 +5,6 @@ import ui
 import sys
 import os
 
-WIDTH = 1280
-HEIGHT = 720
        
 # class MainWindow(QMainWindow):
 #     def __init__(self):
