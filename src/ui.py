@@ -69,7 +69,7 @@ class MainUi(object):
         self.setupNavigationBar()
 
         # Media Layout
-        self.setupMediaLayout()
+        self.setupMediaSection()
 
         # Control Bar
         self.setupControlsBar()
@@ -96,60 +96,27 @@ class MainUi(object):
         self.navLayout = QHBoxLayout(self.navFrame)
         self.navLayout.setSpacing(20)
 
-        # Nav bar buttons
+        # ---- Nav bar buttons ----
 
         # AppIcon Button
-        self.logoButton = QPushButton("")
-        self.logoButton.setIcon(QIcon("assets\\appicon.png"))
-        self.logoButton.setIconSize(QSize(32, 32))
-        self.logoButton.setFlat(True)
-        self.logoButton.setStyleSheet("border: none; background: transparent;")
-        self.navLayout.addWidget(self.logoButton)
+        self.navButtons("", "assets\\appicon.png")
 
         # OpenFile Button
-        self.openFileButton = QPushButton("Open File")
-        self.openFileButton.setIcon(QIcon("assets\\files.png"))
-        self.openFileButton.setIconSize(QSize(32, 32))
-        self.openFileButton.setFlat(True)
-        self.openFileButton.setStyleSheet(
-            "border: none; background: transparent; color: white; font-weight: bold;"
-        )
-        self.navLayout.addWidget(self.openFileButton)
+        self.navButtons("Open File", "assets\\files.png")
 
         # OpenFolder Button
-        self.openFolderButton = QPushButton("Open Folder")
-        self.openFolderButton.setIcon(QIcon("assets\\folder.png"))
-        self.openFolderButton.setIconSize(QSize(32, 32))
-        self.openFolderButton.setFlat(True)
-        self.openFolderButton.setStyleSheet(
-            "border: none; background: transparent; color: white; font-weight: bold;"
-        )
-        self.navLayout.addWidget(self.openFolderButton)
+        self.navButtons("Open Folder", "assets\\folder.png")
 
         # ThemeToggle Button
-        self.themeToggleButton = QPushButton("Theme Toggle")
-        self.themeToggleButton.setIcon(QIcon("assets\\theme.png"))
-        self.themeToggleButton.setIconSize(QSize(38, 38))
-        self.themeToggleButton.setFlat(True)
-        self.themeToggleButton.setStyleSheet(
-            "border: none; background: transparent; color: white; font-weight: bold;"
-        )
-        self.navLayout.addWidget(self.themeToggleButton)
+        self.navButtons("Theme Toggle", "assets\\theme.png")
 
         # Settings Button
         self.navLayout.addStretch()
-        self.settingsButton = QPushButton("Settings")
-        self.settingsButton.setIcon(QIcon("assets\\settings.png"))
-        self.settingsButton.setIconSize(QSize(32, 32))
-        self.settingsButton.setFlat(True)
-        self.settingsButton.setStyleSheet(
-            "border: none; background: transparent; color: white; font-weight: bold;"
-        )
-        self.navLayout.addWidget(self.settingsButton)
+        self.navButtons("Settings", "assets\\settings.png")
 
         self.mainLayout.addWidget(self.navFrame, 1)
 
-    def setupMediaLayout(self):
+    def setupMediaSection(self):
         # Media Layout Dark: #181818 White: #8F8F8F
         self.mediaFrame = QFrame()
         self.mediaFrame.setStyleSheet("""background-color: #181818;
@@ -177,6 +144,16 @@ class MainUi(object):
                                          border-radius: 12px;
                                          """)
         self.mainLayout.addWidget(self.controlsFrame, 2)
+
+    def navButtons(self, text, iconPath):
+        self.Button = QPushButton(text)
+        self.Button.setIcon(QIcon(iconPath))
+        self.Button.setIconSize(QSize(38, 38))
+        self.Button.setFlat(True)
+        self.Button.setStyleSheet(
+            "border: none; background: transparent; color: white; font-weight: bold;"
+        )
+        self.navLayout.addWidget(self.Button)
 
     def addLabel(self, Text):
         label = QLabel(Text)
