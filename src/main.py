@@ -5,13 +5,6 @@ import ui
 import sys
 import os
 
-       
-# class MainWindow(QMainWindow):
-#     def __init__(self):
-#         super().__init__()
-#         self.setWindowTitle("Music Player")
-#         self.resize(QSize(WIDTH, HEIGHT))
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()

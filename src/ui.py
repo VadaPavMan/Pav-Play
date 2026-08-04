@@ -124,14 +124,9 @@ class MainUi(object):
 
         self.mediaLayout = QHBoxLayout(self.mediaFrame)
         # Media Player Frame Dark: #282828 White: #E6E6E6
-        self.playerFrame = QFrame()
-        self.playerFrame.setStyleSheet("""background-color: #282828;
-                                       border-radius: 12px;""")
-
+        self.setupPlayerArea()
         # Media Playlist Frame Dark: #282828 White: #E6E6E6
-        self.playlistFrame = QFrame()
-        self.playlistFrame.setStyleSheet("""background-color: #282828;
-                                         border-radius: 12px;""")
+        self.setupPlaylistArea()
 
         self.mediaLayout.addWidget(self.playerFrame, 4)
         self.mediaLayout.addWidget(self.playlistFrame, 1)
@@ -146,14 +141,70 @@ class MainUi(object):
         self.mainLayout.addWidget(self.controlsFrame, 2)
 
     def navButtons(self, text, iconPath):
-        self.Button = QPushButton(text)
-        self.Button.setIcon(QIcon(iconPath))
-        self.Button.setIconSize(QSize(38, 38))
-        self.Button.setFlat(True)
-        self.Button.setStyleSheet(
+        Button = QPushButton(text)
+        Button.setIcon(QIcon(iconPath))
+        Button.setIconSize(QSize(38, 38))
+        Button.setFlat(True)
+        Button.setStyleSheet(
             "border: none; background: transparent; color: white; font-weight: bold;"
         )
-        self.navLayout.addWidget(self.Button)
+        self.navLayout.addWidget(Button)
+
+    def setupPlayerArea(self):
+        # Media Player Frame Dark: #282828 White: #E6E6E6
+        self.playerFrame = QFrame()
+        self.playerFrame.setStyleSheet("""background-color: #282828;
+                                       border-radius: 12px;""")
+        self.playerLayout = QVBoxLayout(self.playerFrame)
+
+        # StackedWidget() for multiple pages.
+        self.playerStack = QStackedWidget()
+        self.playerLayout.addWidget(self.playerStack)
+
+        # Page 1 (Place Holder)
+        self.setupPlaceholderPage()
+
+        # Page 2 (Video Player)
+        self.videoPage = QWidget()
+        self.videoLayout = QVBoxLayout(self.videoPage)
+        self.videoWidget = QVideoWidget()
+        self.videoLayout.addWidget(self.videoWidget)
+        # Will Implement it later
+        self.playerStack.addWidget(self.videoPage)
+
+        # Page 3 (Music Player)
+        self.musicPage = QWidget()
+        self.musicPlayerLayout = QVBoxLayout()
+        self.musicPlayerLayout.addWidget(QLabel("Will Implement this later"))
+        self.musicPage.setLayout(self.musicPlayerLayout)
+        self.playerStack.addWidget(self.musicPage)
+
+        self.playerStack.setCurrentIndex(0)
+
+    def setupPlaceholderPage(self):
+        self.placeHolder = QWidget()
+        self.placeHolderLayout = QVBoxLayout(self.placeHolder)
+
+        self.heroFrame = QFrame()
+        self.heroLayout = QVBoxLayout(self.heroFrame)
+        self.heroImage = QLabel()
+        heropixmap = QPixmap("assets\\multimedia.png")
+        heropixmap = heropixmap.scaled(
+            180,
+            180,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self.heroImage.setPixmap(heropixmap)
+        self.heroImage.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.heroLayout.addWidget(self.heroImage)
+        self.playerStack.addWidget(self.placeHolder)
+
+    def setupPlaylistArea(self):
+        # Media Playlist Frame Dark: #282828 White: #E6E6E6
+        self.playlistFrame = QFrame()
+        self.playlistFrame.setStyleSheet("""background-color: #282828;
+                                                 border-radius: 12px;""")
 
     def addLabel(self, Text):
         label = QLabel(Text)
