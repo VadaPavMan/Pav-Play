@@ -1,6 +1,11 @@
 import sys
 import os
 import random
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from PySide6.QtCore import (
     QSize,
     Qt,
@@ -51,6 +56,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
+from widgets.drop_area import DropArea
 
 WIDTH = 1280
 HEIGHT = 720
@@ -185,13 +191,14 @@ class MainUi(object):
         self.placeHolder = QWidget()
         self.placeHolderLayout = QVBoxLayout(self.placeHolder)
 
+        # Hero Image
         self.heroFrame = QFrame()
         self.heroLayout = QVBoxLayout(self.heroFrame)
         self.heroImage = QLabel()
         heropixmap = QPixmap("assets\\multimedia.png")
         heropixmap = heropixmap.scaled(
-            180,
-            180,
+            150,
+            150,
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )
@@ -199,6 +206,13 @@ class MainUi(object):
         self.heroImage.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.heroLayout.addWidget(self.heroImage)
         self.playerStack.addWidget(self.placeHolder)
+        self.placeHolderLayout.addWidget(self.heroFrame)
+
+        self.playerStack.addWidget(self.placeHolder)
+        self.dropArea = DropArea()
+        self.placeHolderLayout.addWidget(self.dropArea)
+
+        #
 
     def setupPlaylistArea(self):
         # Media Playlist Frame Dark: #282828 White: #E6E6E6
