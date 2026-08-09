@@ -62,12 +62,12 @@ class DropArea(QFrame):
         super().__init__()
         self.setAcceptDrops(True)
 
-        self.layout = QVBoxLayout(self)
+        self.mainLayout = QVBoxLayout(self)
 
         self.TitleLable = QLabel("Drag & Drop Media File Here")
         self.TitleLable.setContentsMargins(50, 30, 50, 30)
         self.TitleLable.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.layout.addWidget(self.TitleLable)
+        self.mainLayout.addWidget(self.TitleLable)
 
         # Video Format HBox
         self.formatsLayout = QHBoxLayout()
@@ -107,7 +107,7 @@ class DropArea(QFrame):
 
         self.formatsLayout.addWidget(self.videoFrame)
         self.formatsLayout.addWidget(self.audioFrame)
-        self.layout.addLayout(self.formatsLayout)
+        self.mainLayout.addLayout(self.formatsLayout)
 
         # styling
         self.styling()
@@ -157,6 +157,5 @@ class DropArea(QFrame):
 
             if filePath:
                 self.fileSelected.emit(filePath)
-                print(filePath)
         else:
             super().mousePressEvent(event)

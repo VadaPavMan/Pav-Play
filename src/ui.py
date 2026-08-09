@@ -57,6 +57,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from widgets.drop_area import DropArea
+from controllers.player_controller import PlayerController
 
 WIDTH = 1280
 HEIGHT = 720
@@ -157,6 +158,8 @@ class MainUi(object):
         self.navLayout.addWidget(Button)
 
     def setupPlayerArea(self):
+        
+        
         # Media Player Frame Dark: #282828 White: #E6E6E6
         self.playerFrame = QFrame()
         self.playerFrame.setStyleSheet("""background-color: #282828;
@@ -175,16 +178,17 @@ class MainUi(object):
         self.videoLayout = QVBoxLayout(self.videoPage)
         self.videoWidget = QVideoWidget()
         self.videoLayout.addWidget(self.videoWidget)
-        # Will Implement it later
         self.playerStack.addWidget(self.videoPage)
 
         # Page 3 (Music Player)
         self.musicPage = QWidget()
-        self.musicPlayerLayout = QVBoxLayout()
-        self.musicPlayerLayout.addWidget(QLabel("Will Implement this later"))
-        self.musicPage.setLayout(self.musicPlayerLayout)
+        self.musicPlayerLayout = QVBoxLayout(self.musicPage)
+        self.musicPlayerLayout.addWidget(QLabel("Audio Player"))
         self.playerStack.addWidget(self.musicPage)
 
+        # Media Setup Controller 
+        self.controller = PlayerController(self.videoWidget)
+        
         self.playerStack.setCurrentIndex(0)
 
     def setupPlaceholderPage(self):
@@ -213,10 +217,17 @@ class MainUi(object):
         self.placeHolderLayout.addWidget(self.dropArea)
         self.playerStack.addWidget(self.placeHolder)
 
-        #
 
     def onFileSelected(self, filePath):
         print("Selected:", filePath)
+        page = self.controller.loadMedia(filePath)
+        
+        if page == "video":
+            self.playerStack.setCurrentWidget(self.videoPage)
+        elif page == "audio":
+            self.playerStack.setCurrentWidget(self.musicPage)
+        else:
+            QMessageBox.warning(self.MainWindow,  "Unsupported", "Unsupported media format.")
 
     def setupPlaylistArea(self):
         # Media Playlist Frame Dark: #282828 White: #E6E6E6
