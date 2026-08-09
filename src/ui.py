@@ -159,7 +159,6 @@ class MainUi(object):
 
     def setupPlayerArea(self):
         
-        
         # Media Player Frame Dark: #282828 White: #E6E6E6
         self.playerFrame = QFrame()
         self.playerFrame.setStyleSheet("""background-color: #282828;
@@ -186,7 +185,7 @@ class MainUi(object):
         self.musicPlayerLayout.addWidget(QLabel("Audio Player"))
         self.playerStack.addWidget(self.musicPage)
 
-        # Media Setup Controller 
+        # Media Setup Controller (Default Video Player)
         self.controller = PlayerController(self.videoWidget)
         
         self.playerStack.setCurrentIndex(0)
