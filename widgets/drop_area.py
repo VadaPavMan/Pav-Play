@@ -12,6 +12,8 @@ from PySide6.QtCore import (
     QCoreApplication,
     QMetaObject,
     QRect,
+    Signal,
+    QObject,
 )
 from PySide6.QtGui import (
     QAction,
@@ -54,6 +56,8 @@ from PySide6.QtMultimediaWidgets import QVideoWidget
 
 
 class DropArea(QFrame):
+    fileSelected = Signal(str)
+
     def __init__(self):
         super().__init__()
         self.setAcceptDrops(True)
@@ -74,9 +78,9 @@ class DropArea(QFrame):
         self.videoLayout.setContentsMargins(15, 15, 15, 15)
         self.videoLayout.setSpacing(6)
 
-        videoTitle = QLabel("Supported Video Formats")
-        videoTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.videoLayout.addWidget(videoTitle)
+        self.videoTitle = QLabel("Supported Video Formats")
+        self.videoTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.videoLayout.addWidget(self.videoTitle)
 
         video_formats = ["mp4", "mkv", "mov", "webm", "avi", "wmv"]
 
@@ -92,9 +96,9 @@ class DropArea(QFrame):
         self.audioLayout.setContentsMargins(15, 15, 15, 15)
         self.audioLayout.setSpacing(6)
 
-        audioTitle = QLabel("Supported Audio Formats")
-        audioTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.audioLayout.addWidget(audioTitle)
+        self.audioTitle = QLabel("Supported Audio Formats")
+        self.audioTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.audioLayout.addWidget(self.audioTitle)
         audio_formats = ["mp3", "aac", "wav", "flac", "ogg", "wma"]
 
         for fmt in audio_formats:
@@ -106,18 +110,53 @@ class DropArea(QFrame):
         self.layout.addLayout(self.formatsLayout)
 
         # styling
-        self.TitleLable.setStyleSheet("""QFrame{
+        self.styling()
+
+    def styling(self):
+        self.TitleLable.setStyleSheet("""QLabel{
             border:2px dashed gray;
             border-radius:15px;
             background:#303030;
             font-weight: bold;
             font-size: 18px;
+            color: white;
             }
-        """)
+            """)
 
-        videoTitle.setStyleSheet("font-size: 18px;")
-        audioTitle.setStyleSheet("font-size: 18px;")
+        self.videoTitle.setStyleSheet("font-size: 18px;")
+        self.audioTitle.setStyleSheet("font-size: 18px;")
 
         self.setStyleSheet(
             """ QFrame { background: #1E1E1E; border: 2px solid; border-radius: 18px; } QFrame#formatCard { background: #303030; border: 2px solid; border-radius: 14px; } QLabel { color: white; background: transparent; border: none; font-weight: bold; } """
         )
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event: QDropEvent):
+        urls = event.mimeData().urls()
+        if not urls:
+            return
+
+        filePath = urls[0].toLocalFile()
+        if filePath:
+            self.fileSelected.emit(filePath)
+            print(filePath)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            filePath, _ = QFileDialog.getOpenFileName(
+                self,
+                "Open Media File",
+                "",
+                "Media Files (*.mp3 *.wav *.flac *.ogg *.mp4 *.mkv *.avi *.mov *.webm);; All Files (*.*)",
+            )
+
+            if filePath:
+                self.fileSelected.emit(filePath)
+                print(filePath)
+        else:
+            super().mousePressEvent(event)

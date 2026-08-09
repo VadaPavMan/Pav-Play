@@ -205,14 +205,18 @@ class MainUi(object):
         self.heroImage.setPixmap(heropixmap)
         self.heroImage.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.heroLayout.addWidget(self.heroImage)
-        self.playerStack.addWidget(self.placeHolder)
         self.placeHolderLayout.addWidget(self.heroFrame)
-
-        self.playerStack.addWidget(self.placeHolder)
+        
+        # Drop Media
         self.dropArea = DropArea()
+        self.dropArea.fileSelected.connect(self.onFileSelected)
         self.placeHolderLayout.addWidget(self.dropArea)
+        self.playerStack.addWidget(self.placeHolder)
 
         #
+
+    def onFileSelected(self, filePath):
+        print("Selected:", filePath)
 
     def setupPlaylistArea(self):
         # Media Playlist Frame Dark: #282828 White: #E6E6E6
