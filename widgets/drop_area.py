@@ -53,7 +53,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
-
+    
 
 class DropArea(QFrame):
     fileSelected = Signal(str)
@@ -99,7 +99,7 @@ class DropArea(QFrame):
         self.audioTitle = QLabel("Supported Audio Formats")
         self.audioTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.audioLayout.addWidget(self.audioTitle)
-        audio_formats = ["mp3", "aac", "wav", "flac", "ogg", "wma"]
+        audio_formats = ["mp3", "m4a", "aac", "wav", "flac", "ogg", "wma"]
 
         for fmt in audio_formats:
             label = QLabel(f"• {fmt}")
@@ -152,7 +152,7 @@ class DropArea(QFrame):
                 self,
                 "Open Media File",
                 "",
-                "Media Files (*.mp3 *.wav *.flac *.ogg *.mp4 *.mkv *.avi *.mov *.webm);; All Files (*.*)",
+                "Media Files (*.mp3 *.m4a *.aac *.wav *.flac *.ogg *.wma *.mp4 *.mkv *.webm *.avi *.mov *.wmv);; All Files (*.*)",
             )
 
             if filePath:
