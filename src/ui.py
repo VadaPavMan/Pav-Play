@@ -151,6 +151,7 @@ class MainUi(object):
         self.currentTimeLabel = QLabel("0:00")
         self.positionSlider = QSlider(Qt.Orientation.Horizontal)
         self.positionSlider.setRange(0, 1000)
+        self.positionSlider.setStyleSheet(self.SliderStyle())
         self.totalTimeLabel = QLabel("0:00")
 
         self.progressLayout.addWidget(self.currentTimeLabel)
@@ -158,48 +159,86 @@ class MainUi(object):
         self.progressLayout.addWidget(self.totalTimeLabel)
 
         self.controlsLayout.addLayout(self.progressLayout)
+        
+        # Buttons Section
+        self.bottomLayout = QHBoxLayout()
+        self.bottomLayout.setContentsMargins(0, 5, 0, 0)
 
-        # Buttons Row
-        self.buttonsLayout = QHBoxLayout()
+        self.transportLayout = QHBoxLayout()
+        self.transportLayout.setSpacing(12)
 
         self.previousButton = self.controlButtons("assets\\previous.png")
+
         self.playPauseButton = self.controlButtons("assets\\play.png")
+        self.playPauseButton.setFixedSize(80, 80)
+        self.playPauseButton.setIconSize(QSize(68, 68))
+
         self.nextButton = self.controlButtons("assets\\next.png")
 
-        self.buttonsLayout.addWidget(self.previousButton)
-        self.buttonsLayout.addWidget(self.playPauseButton)
-        self.buttonsLayout.addWidget(self.nextButton)
+        self.transportLayout.addWidget(self.previousButton)
+        self.transportLayout.addWidget(self.playPauseButton)
+        self.transportLayout.addWidget(self.nextButton)
 
-        self.controlsLayout.addLayout(self.buttonsLayout)
+        self.bottomLayout.addStretch()
+
+        self.bottomLayout.addLayout(self.transportLayout)
+
+        self.bottomLayout.addStretch()
 
         # Volume Section
-        # self.controlsLayout.addStretch()
         self.volumeLayout = QHBoxLayout()
+        self.volumeLayout.setSpacing(8)
 
         self.volumeButton = self.controlButtons("assets\\speaker.png")
-        self.volumeLayout.addWidget(self.volumeButton)
+        self.volumeButton.setIconSize(QSize(42, 42))
 
+        # -- Slider
         self.volumeSlider = QSlider(Qt.Orientation.Horizontal)
         self.volumeSlider.setRange(0, 100)
         self.volumeSlider.setValue(100)
         self.volumeSlider.setFixedWidth(120)
-        self.volumeLayout.addWidget(self.volumeSlider)
-        
-        self.statusLabel = QLabel("Ready")
-        self.volumeLayout.addWidget(self.statusLabel)
 
-        self.controlsLayout.addLayout(self.volumeLayout)
+        self.volumeLayout.addWidget(self.volumeButton)
+        self.volumeLayout.addWidget(self.volumeSlider)
+
+        # Slider stylesheet
+        self.volumeSlider.setStyleSheet(self.SliderStyle())
+
+        self.bottomLayout.addLayout(self.volumeLayout)
+
+        # Status
+        self.statusLabel = QLabel("Ready")
+        self.statusLabel.setStyleSheet("color: #CCCCCC; font-size: 12px;")
+        self.bottomLayout.addSpacing(15)
+        self.bottomLayout.addWidget(self.statusLabel)
+
+        self.controlsLayout.addLayout(self.bottomLayout)
 
         # Control Bar Dark: #1E1E1E White: #C9C9C9
         self.controlsFrame.setStyleSheet("""background-color: #1E1E1E;
-                                         border-radius: 12px;
-                                         """)
+                                         border-radius: 12px;""")
+
         self.mainLayout.addWidget(self.controlsFrame, 2)
+        
+    def SliderStyle(self):
+        return """QSlider::groove:horizontal {
+                                             height: 4px;
+                                             background: #3A3A3A;
+                                             border-radius: 2px;
+                                         }
+                                         
+                                         QSlider::handle:horizontal {
+                                             background: white;
+                                             width: 14px;
+                                             margin: -5px 0;
+                                             border-radius: 7px;
+                                         }"""
 
     def controlButtons(self, iconPath):
         Button = QPushButton()
         Button.setIcon(QIcon(iconPath))
-        Button.setIconSize(QSize(48, 48))
+        Button.setIconSize(QSize(42, 42))
+        Button.setFixedSize(62, 62)
         Button.setFlat(True)
         Button.setStyleSheet(
             "border: none; background: transparent; color: white; font-weight: bold;"
