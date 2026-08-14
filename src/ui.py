@@ -109,17 +109,17 @@ class MainUi(object):
         self.navButtons("", "assets\\appicon.png")
 
         # OpenFile Button
-        self.navButtons("Open File", "assets\\files.png")
+        self.navButtons("", "assets\\files.png")
 
         # OpenFolder Button
-        self.navButtons("Open Folder", "assets\\folder.png")
+        self.navButtons("", "assets\\folder.png")
 
         # ThemeToggle Button
-        self.navButtons("Theme Toggle", "assets\\theme.png")
+        self.navButtons("", "assets\\theme.png")
 
         # Settings Button
         self.navLayout.addStretch()
-        self.navButtons("Settings", "assets\\settings.png")
+        self.navButtons("", "assets\\settings.png")
 
         self.mainLayout.addWidget(self.navFrame, 1)
 
@@ -159,7 +159,7 @@ class MainUi(object):
         self.progressLayout.addWidget(self.totalTimeLabel)
 
         self.controlsLayout.addLayout(self.progressLayout)
-        
+
         # Buttons Section
         self.bottomLayout = QHBoxLayout()
         self.bottomLayout.setContentsMargins(0, 5, 0, 0)
@@ -219,7 +219,7 @@ class MainUi(object):
                                          border-radius: 12px;""")
 
         self.mainLayout.addWidget(self.controlsFrame, 2)
-        
+
     def SliderStyle(self):
         return """QSlider::groove:horizontal {
                                              height: 4px;
@@ -248,7 +248,7 @@ class MainUi(object):
     def navButtons(self, text, iconPath):
         Button = QPushButton(text)
         Button.setIcon(QIcon(iconPath))
-        Button.setIconSize(QSize(38, 38))
+        Button.setIconSize(QSize(48, 48))
         Button.setFlat(True)
         Button.setStyleSheet(
             "border: none; background: transparent; color: white; font-weight: bold;"
@@ -298,8 +298,8 @@ class MainUi(object):
         self.heroImage = QLabel()
         heropixmap = QPixmap("assets\\multimedia.png")
         heropixmap = heropixmap.scaled(
-            150,
-            150,
+            250,
+            250,
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )

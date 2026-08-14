@@ -1,2 +1,3 @@
+- App Icon: Xnimrodx (https://www.flaticon.com/kr/authors/xnimrodx)
 - Control Buttons: Muhammad Ali (https://www.flaticon.com/authors/muhammad-ali)
-
+- Dashboard Hero Icon: Eucalyp (https://www.flaticon.com/authors/eucalyp)
