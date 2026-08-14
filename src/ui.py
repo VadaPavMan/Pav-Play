@@ -58,13 +58,16 @@ from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from widgets.drop_area import DropArea
 from controllers.player_controller import PlayerController
+from controllers.formatTime import formatTime
+from icons import Icons
 
 WIDTH = 1280
 HEIGHT = 720
 
 
 class MainUi(object):
-    def __init__(self): ...
+    def __init__(self):
+        self.icons = Icons()
 
     def setup(self, MainWindow):
         self.MainWindow = MainWindow
@@ -106,20 +109,20 @@ class MainUi(object):
         # ---- Nav bar buttons ----
 
         # AppIcon Button
-        self.navButtons("", "assets\\appicon.png")
+        self.navButtons("", self.icons.APPICON)
 
         # OpenFile Button
-        self.navButtons("", "assets\\files.png")
+        self.navButtons("", self.icons.FILES)
 
         # OpenFolder Button
-        self.navButtons("", "assets\\folder.png")
+        self.navButtons("", self.icons.FOLDER)
 
         # ThemeToggle Button
-        self.navButtons("", "assets\\theme.png")
+        self.navButtons("", self.icons.THEME)
 
         # Settings Button
         self.navLayout.addStretch()
-        self.navButtons("", "assets\\settings.png")
+        self.navButtons("", self.icons.SETTINGS)
 
         self.mainLayout.addWidget(self.navFrame, 1)
 
@@ -151,6 +154,7 @@ class MainUi(object):
         self.currentTimeLabel = QLabel("0:00")
         self.positionSlider = QSlider(Qt.Orientation.Horizontal)
         self.positionSlider.setRange(0, 1000)
+        self.positionSlider.sliderMoved.connect(self.seekPosition)
         self.positionSlider.setStyleSheet(self.SliderStyle())
         self.totalTimeLabel = QLabel("0:00")
 
@@ -160,20 +164,21 @@ class MainUi(object):
 
         self.controlsLayout.addLayout(self.progressLayout)
 
-        # Buttons Section
+        # Buttons Section + Connection
         self.bottomLayout = QHBoxLayout()
         self.bottomLayout.setContentsMargins(0, 5, 0, 0)
 
         self.transportLayout = QHBoxLayout()
         self.transportLayout.setSpacing(12)
 
-        self.previousButton = self.controlButtons("assets\\previous.png")
+        self.previousButton = self.controlButtons(self.icons.PAUSE)
 
-        self.playPauseButton = self.controlButtons("assets\\play.png")
+        self.playPauseButton = self.controlButtons(self.icons.PLAY)
         self.playPauseButton.setFixedSize(80, 80)
         self.playPauseButton.setIconSize(QSize(68, 68))
+        self.playPauseButton.clicked.connect(self.controller.togglePlayPause)
 
-        self.nextButton = self.controlButtons("assets\\next.png")
+        self.nextButton = self.controlButtons(self.icons.NEXT)
 
         self.transportLayout.addWidget(self.previousButton)
         self.transportLayout.addWidget(self.playPauseButton)
@@ -189,7 +194,7 @@ class MainUi(object):
         self.volumeLayout = QHBoxLayout()
         self.volumeLayout.setSpacing(8)
 
-        self.volumeButton = self.controlButtons("assets\\speaker.png")
+        self.volumeButton = self.controlButtons(self.icons.SPEAKER)
         self.volumeButton.setIconSize(QSize(42, 42))
 
         # -- Slider
@@ -255,6 +260,28 @@ class MainUi(object):
         )
         self.navLayout.addWidget(Button)
 
+    # Update Icon ---- Section
+    def updatePlayPauseIcon(self, state):
+        if state == QMediaPlayer.PlaybackState.PlayingState:
+            self.playPauseButton.setIcon(QIcon(self.icons.PAUSE))
+        else:
+            self.playPauseButton.setIcon(QIcon(self.icons.PLAY))
+            
+    # Update Section
+    def updatePosition(self, position):
+        self.positionSlider.blockSignals(True)
+        self.positionSlider.setValue(position)
+        self.positionSlider.blockSignals(False)
+        
+        self.currentTimeLabel.setText(formatTime(position))
+        
+    def updateDuration(self, duration):
+        self.positionSlider.setRange(0, duration)
+        self.totalTimeLabel.setText(formatTime(duration))
+        
+    def seekPosition(self, position):
+        self.controller.mediaPlayer.setPosition(position)
+
     def setupPlayerArea(self):
 
         # Media Player Frame Dark: #282828 White: #E6E6E6
@@ -285,6 +312,11 @@ class MainUi(object):
 
         # Media Setup Controller (Default Video Player)
         self.controller = PlayerController(self.videoWidget)
+        
+        # Media Control Activity 
+        self.controller.mediaPlayer.playbackStateChanged.connect(self.updatePlayPauseIcon)
+        self.controller.mediaPlayer.positionChanged.connect(self.updatePosition)
+        self.controller.mediaPlayer.durationChanged.connect(self.updateDuration)
 
         self.playerStack.setCurrentIndex(0)
 
@@ -296,7 +328,7 @@ class MainUi(object):
         self.heroFrame = QFrame()
         self.heroLayout = QVBoxLayout(self.heroFrame)
         self.heroImage = QLabel()
-        heropixmap = QPixmap("assets\\multimedia.png")
+        heropixmap = QPixmap(self.icons.MULTIMEDIA)
         heropixmap = heropixmap.scaled(
             250,
             250,

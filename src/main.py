@@ -1,6 +1,7 @@
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel
+from icons import Icons
 import sys
 import os
 
@@ -21,7 +22,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon("assets\\appIcon.png"))
+    app.setWindowIcon(QIcon(Icons.APPICON))
     app.setStyle("Fusion")
     window = MainWindow()
     window.show()

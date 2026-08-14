@@ -90,3 +90,9 @@ class PlayerController:
 
     def pause(self):
         self.mediaPlayer.pause()
+        
+    def togglePlayPause(self):
+        if self.mediaPlayer.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            self.mediaPlayer.pause()
+        else:
+            self.mediaPlayer.play()
