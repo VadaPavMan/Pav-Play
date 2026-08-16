@@ -171,7 +171,7 @@ class MainUi(object):
         self.transportLayout = QHBoxLayout()
         self.transportLayout.setSpacing(12)
 
-        self.previousButton = self.controlButtons(self.icons.PAUSE)
+        self.previousButton = self.controlButtons(self.icons.PREVIOUS)
 
         self.playPauseButton = self.controlButtons(self.icons.PLAY)
         self.playPauseButton.setFixedSize(80, 80)
@@ -266,19 +266,19 @@ class MainUi(object):
             self.playPauseButton.setIcon(QIcon(self.icons.PAUSE))
         else:
             self.playPauseButton.setIcon(QIcon(self.icons.PLAY))
-            
+
     # Update Section
     def updatePosition(self, position):
         self.positionSlider.blockSignals(True)
         self.positionSlider.setValue(position)
         self.positionSlider.blockSignals(False)
-        
+
         self.currentTimeLabel.setText(formatTime(position))
-        
+
     def updateDuration(self, duration):
         self.positionSlider.setRange(0, duration)
         self.totalTimeLabel.setText(formatTime(duration))
-        
+
     def seekPosition(self, position):
         self.controller.mediaPlayer.setPosition(position)
 
@@ -312,9 +312,11 @@ class MainUi(object):
 
         # Media Setup Controller (Default Video Player)
         self.controller = PlayerController(self.videoWidget)
-        
-        # Media Control Activity 
-        self.controller.mediaPlayer.playbackStateChanged.connect(self.updatePlayPauseIcon)
+
+        # Media Control Activity
+        self.controller.mediaPlayer.playbackStateChanged.connect(
+            self.updatePlayPauseIcon
+        )
         self.controller.mediaPlayer.positionChanged.connect(self.updatePosition)
         self.controller.mediaPlayer.durationChanged.connect(self.updateDuration)
 
@@ -361,7 +363,45 @@ class MainUi(object):
             )
 
     def setupPlaylistArea(self):
-        # Media Playlist Frame Dark: #282828 White: #E6E6E6
+        # Playlist Section
         self.playlistFrame = QFrame()
+        # Media Playlist Frame Dark: #282828 White: #E6E6E6
         self.playlistFrame.setStyleSheet("""background-color: #282828;
-                                                 border-radius: 12px;""")
+                                           border-radius: 12px;""")
+
+        self.playlistLayout = QVBoxLayout(self.playlistFrame)
+        self.playlistLayout.setContentsMargins(10, 10, 10, 10)
+        
+        self.playlistLabel = QLabel("Play List")
+        self.playlistLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.playlistLayout.addWidget(self.playlistLabel)
+        
+        self.playlistWidget = QListWidget()
+        self.playlistWidget.setStyleSheet("""
+                                    QListWidget {
+                                        background-color: #282828;
+                                        border: none;
+                                        color: white;
+                                        font-size: 14px;
+                                    }
+                                    
+                                    QListWidget::item {
+                                        padding: 10px;
+                                        border-radius: 6px;
+                                    }
+                                    
+                                    QListWidget::item:selected {
+                                        background-color: #3A3A3A;
+                                    }
+                                    
+                                    QListWidget::item:hover {
+                                        background-color: #333333;
+                                    }
+                                """)
+
+        self.playlistWidget.addItem("Song-1.mp3")
+        self.playlistWidget.addItem("Song 2.mp3")
+        self.playlistWidget.addItem("Movie.mp4")
+        self.playlistWidget.addItem("Music Video.mkv")
+
+        self.playlistLayout.addWidget(self.playlistWidget)
