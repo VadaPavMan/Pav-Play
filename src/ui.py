@@ -67,7 +67,7 @@ HEIGHT = 720
 
 class MainUi(object):
     def __init__(self):
-        self.icons = Icons()
+        self.currentIndex = -1
 
     def setup(self, MainWindow):
         self.MainWindow = MainWindow
@@ -109,20 +109,20 @@ class MainUi(object):
         # ---- Nav bar buttons ----
 
         # AppIcon Button
-        self.navButtons("", self.icons.APPICON)
+        self.navButtons("", Icons.APPICON)
 
         # OpenFile Button
-        self.navButtons("", self.icons.FILES)
+        self.navButtons("", Icons.FILES)
 
         # OpenFolder Button
-        self.navButtons("", self.icons.FOLDER)
+        self.navButtons("", Icons.FOLDER)
 
         # ThemeToggle Button
-        self.navButtons("", self.icons.THEME)
+        self.navButtons("", Icons.THEME)
 
         # Settings Button
         self.navLayout.addStretch()
-        self.navButtons("", self.icons.SETTINGS)
+        self.navButtons("", Icons.SETTINGS)
 
         self.mainLayout.addWidget(self.navFrame, 1)
 
@@ -171,14 +171,14 @@ class MainUi(object):
         self.transportLayout = QHBoxLayout()
         self.transportLayout.setSpacing(12)
 
-        self.previousButton = self.controlButtons(self.icons.PREVIOUS)
+        self.previousButton = self.controlButtons(Icons.PREVIOUS)
 
-        self.playPauseButton = self.controlButtons(self.icons.PLAY)
+        self.playPauseButton = self.controlButtons(Icons.PLAY)
         self.playPauseButton.setFixedSize(80, 80)
         self.playPauseButton.setIconSize(QSize(68, 68))
         self.playPauseButton.clicked.connect(self.controller.togglePlayPause)
 
-        self.nextButton = self.controlButtons(self.icons.NEXT)
+        self.nextButton = self.controlButtons(Icons.NEXT)
 
         self.transportLayout.addWidget(self.previousButton)
         self.transportLayout.addWidget(self.playPauseButton)
@@ -194,7 +194,7 @@ class MainUi(object):
         self.volumeLayout = QHBoxLayout()
         self.volumeLayout.setSpacing(8)
 
-        self.volumeButton = self.controlButtons(self.icons.SPEAKER)
+        self.volumeButton = self.controlButtons(Icons.SPEAKER)
         self.volumeButton.setIconSize(QSize(42, 42))
 
         # -- Slider
@@ -263,9 +263,9 @@ class MainUi(object):
     # Update Icon ---- Section
     def updatePlayPauseIcon(self, state):
         if state == QMediaPlayer.PlaybackState.PlayingState:
-            self.playPauseButton.setIcon(QIcon(self.icons.PAUSE))
+            self.playPauseButton.setIcon(QIcon(Icons.PAUSE))
         else:
-            self.playPauseButton.setIcon(QIcon(self.icons.PLAY))
+            self.playPauseButton.setIcon(QIcon(Icons.PLAY))
 
     # Update Section
     def updatePosition(self, position):
@@ -330,7 +330,7 @@ class MainUi(object):
         self.heroFrame = QFrame()
         self.heroLayout = QVBoxLayout(self.heroFrame)
         self.heroImage = QLabel()
-        heropixmap = QPixmap(self.icons.MULTIMEDIA)
+        heropixmap = QPixmap(Icons.MULTIMEDIA)
         heropixmap = heropixmap.scaled(
             250,
             250,
@@ -351,8 +351,16 @@ class MainUi(object):
     # Sets Page According to Media Format...
     def onFileSelected(self, filePath):
         print("Selected:", filePath)
+        
+        # Add selected files to playlist
+        item = self.addPlaylistItem(filePath)
+        self.playlistWidget.setCurrentItem(item)
+        self.currentIndex = self.playlistWidget.row(item)
+        self.playMedia(filePath)
+        
+    def playMedia(self, filePath):
         page = self.controller.loadMedia(filePath)
-
+        
         if page == "video":
             self.playerStack.setCurrentWidget(self.videoPage)
         elif page == "audio":
@@ -371,11 +379,11 @@ class MainUi(object):
 
         self.playlistLayout = QVBoxLayout(self.playlistFrame)
         self.playlistLayout.setContentsMargins(10, 10, 10, 10)
-        
+
         self.playlistLabel = QLabel("Play List")
         self.playlistLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.playlistLayout.addWidget(self.playlistLabel)
-        
+
         self.playlistWidget = QListWidget()
         self.playlistWidget.setStyleSheet("""
                                     QListWidget {
@@ -399,9 +407,27 @@ class MainUi(object):
                                     }
                                 """)
 
-        self.playlistWidget.addItem("Song-1.mp3")
-        self.playlistWidget.addItem("Song 2.mp3")
-        self.playlistWidget.addItem("Movie.mp4")
-        self.playlistWidget.addItem("Music Video.mkv")
-
         self.playlistLayout.addWidget(self.playlistWidget)
+        self.playlistWidget.itemDoubleClicked.connect(self.playPlaylistItem)
+
+    def addPlaylistItem(self, file_path):
+        # Check Duplicates
+        for index in range(self.playlistWidget.count()):
+            item = self.playlistWidget.item(index)
+            checkFile = item.data(Qt.ItemDataRole.UserRole)
+            
+            if checkFile == file_path:
+                return item
+            
+        file_name = os.path.basename(file_path)
+
+        item = QListWidgetItem(file_name)
+        item.setData(Qt.ItemDataRole.UserRole, file_path)
+        self.playlistWidget.addItem(item)
+
+        return item
+
+    def playPlaylistItem(self, item):
+        file_path = item.data(Qt.ItemDataRole.UserRole)
+        self.playMedia(file_path)
+        print("Selected playlist file:", file_path)

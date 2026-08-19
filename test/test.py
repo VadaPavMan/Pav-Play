@@ -1,7 +1,7 @@
 import sys
 import os
 import random
-from PyQt6.QtCore import Qt, QUrl, QTime, QPropertyAnimation, QEasingCurve, pyqtProperty
+from PyQt6.QtCore import Qt, QUrl, QTime, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QAction, QKeyEvent, QDragEnterEvent, QDropEvent, QColor, QPalette
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QListWidget, QListWidgetItem, QSplitter,
