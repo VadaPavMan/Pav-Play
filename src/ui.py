@@ -67,6 +67,7 @@ HEIGHT = 720
 
 class MainUi(object):
     def __init__(self):
+        # for media playback
         self.currentIndex = -1
 
     def setup(self, MainWindow):
@@ -171,14 +172,18 @@ class MainUi(object):
         self.transportLayout = QHBoxLayout()
         self.transportLayout.setSpacing(12)
 
+        # previous button + connection
         self.previousButton = self.controlButtons(Icons.PREVIOUS)
+        self.previousButton.clicked.connect(self.playPrevious)
 
         self.playPauseButton = self.controlButtons(Icons.PLAY)
         self.playPauseButton.setFixedSize(80, 80)
         self.playPauseButton.setIconSize(QSize(68, 68))
         self.playPauseButton.clicked.connect(self.controller.togglePlayPause)
 
+        # next button + connection
         self.nextButton = self.controlButtons(Icons.NEXT)
+        self.nextButton.clicked.connect(self.playNext)
 
         self.transportLayout.addWidget(self.previousButton)
         self.transportLayout.addWidget(self.playPauseButton)
@@ -351,16 +356,16 @@ class MainUi(object):
     # Sets Page According to Media Format...
     def onFileSelected(self, filePath):
         print("Selected:", filePath)
-        
+
         # Add selected files to playlist
         item = self.addPlaylistItem(filePath)
         self.playlistWidget.setCurrentItem(item)
         self.currentIndex = self.playlistWidget.row(item)
         self.playMedia(filePath)
-        
+
     def playMedia(self, filePath):
         page = self.controller.loadMedia(filePath)
-        
+
         if page == "video":
             self.playerStack.setCurrentWidget(self.videoPage)
         elif page == "audio":
@@ -415,10 +420,10 @@ class MainUi(object):
         for index in range(self.playlistWidget.count()):
             item = self.playlistWidget.item(index)
             checkFile = item.data(Qt.ItemDataRole.UserRole)
-            
+
             if checkFile == file_path:
                 return item
-            
+
         file_name = os.path.basename(file_path)
 
         item = QListWidgetItem(file_name)
@@ -428,6 +433,40 @@ class MainUi(object):
         return item
 
     def playPlaylistItem(self, item):
+        self.currentIndex = self.playlistWidget.row(item)
+
         file_path = item.data(Qt.ItemDataRole.UserRole)
         self.playMedia(file_path)
         print("Selected playlist file:", file_path)
+
+    def playNext(self):
+        if self.playlistWidget.count() == 0:
+            return
+
+        if self.currentIndex < self.playlistWidget.count() - 1:
+            self.currentIndex += 1
+        elif self.currentIndex == self.playlistWidget.count() - 1:
+            self.currentIndex = 0
+        else:
+            return
+
+        item = self.playlistWidget.item(self.currentIndex)
+        self.playlistWidget.setCurrentItem(item)
+        file_path = item.data(Qt.ItemDataRole.UserRole)
+        self.playMedia(file_path)
+
+    def playPrevious(self):
+        if self.playlistWidget.count() == 0:
+            return
+
+        if self.currentIndex > 0:
+            self.currentIndex -= 1
+        elif self.currentIndex == 0:
+            self.currentIndex = self.playlistWidget.count() - 1
+        else:
+            return
+
+        item = self.playlistWidget.item(self.currentIndex)
+        self.playlistWidget.setCurrentItem(item)
+        file_path = item.data(Qt.ItemDataRole.UserRole)
+        self.playMedia(file_path)
