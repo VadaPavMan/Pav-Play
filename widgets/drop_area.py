@@ -152,14 +152,14 @@ class DropArea(QFrame):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            filePaths, _ = QFileDialog.getOpenFileNames(
+            file_paths, _ = QFileDialog.getOpenFileNames(
                 self,
                 "Open Media File",
                 "",
                 "Media Files (*.mp3 *.m4a *.aac *.wav *.flac *.ogg *.wma *.mp4 *.mkv *.webm *.avi *.mov *.wmv);; All Files (*.*)",
             )
 
-            for filePath in filePaths:
-                self.fileSelected.emit(filePath)
+            for file_path in file_paths:
+                self.fileSelected.emit(file_path)
         else:
             super().mousePressEvent(event)

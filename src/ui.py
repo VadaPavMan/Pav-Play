@@ -28,6 +28,9 @@ from PySide6.QtGui import (
     QDropEvent,
     QColor,
     QPalette,
+    QPainter,
+    QPen,
+    QBrush,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -110,20 +113,28 @@ class MainUi(object):
         # ---- Nav bar buttons ----
 
         # AppIcon Button
-        self.navButtons("", Icons.APPICON)
+        self.appiconBtn = self.navButtons("", Icons.APPICON)
+        self.navLayout.addWidget(self.appiconBtn)
 
         # OpenFile Button
-        self.navButtons("", Icons.FILES)
+        self.openfilesBtn = self.navButtons("", Icons.FILES)
+        self.openfilesBtn.clicked.connect(self.openFiles)
+        self.navLayout.addWidget(self.openfilesBtn)
 
         # OpenFolder Button
-        self.navButtons("", Icons.FOLDER)
+        self.openFolderBtn = self.navButtons("", Icons.FOLDER)
+        self.navLayout.addWidget(self.openFolderBtn)
 
         # ThemeToggle Button
-        self.navButtons("", Icons.THEME)
+        self.themeToggleBtn = self.navButtons("", Icons.THEME)
+        self.navLayout.addWidget(self.themeToggleBtn)
 
         # Settings Button
         self.navLayout.addStretch()
-        self.navButtons("", Icons.SETTINGS)
+        self.settingsBtn = self.navButtons("", Icons.SETTINGS)
+        self.navLayout.addWidget(self.settingsBtn)
+
+        # Adding Buttons to layout
 
         self.mainLayout.addWidget(self.navFrame, 1)
 
@@ -202,7 +213,7 @@ class MainUi(object):
         self.volumeButton = self.controlButtons(Icons.SPEAKER)
         self.volumeButton.setIconSize(QSize(42, 42))
 
-        # -- Slider
+        # --  volume Slider
         self.volumeSlider = QSlider(Qt.Orientation.Horizontal)
         self.volumeSlider.setRange(0, 100)
         self.volumeSlider.setValue(100)
@@ -231,18 +242,44 @@ class MainUi(object):
         self.mainLayout.addWidget(self.controlsFrame, 2)
 
     def SliderStyle(self):
-        return """QSlider::groove:horizontal {
-                                             height: 4px;
-                                             background: #3A3A3A;
-                                             border-radius: 2px;
-                                         }
-                                         
-                                         QSlider::handle:horizontal {
-                                             background: white;
-                                             width: 14px;
-                                             margin: -5px 0;
-                                             border-radius: 7px;
-                                         }"""
+        return """
+        QSlider {
+            min-height: 28px;
+            background: transparent;
+        }
+        QSlider::groove:horizontal {
+            height: 6px;
+            background: #141414;
+            border: 1px solid #000000;
+            border-radius: 3px;
+        }
+        QSlider::sub-page:horizontal {
+            background: #FF3344;
+            border: 1px solid #000000;
+            border-radius: 3px;
+        }
+        QSlider::add-page:horizontal {
+            background: #141414;
+            border: 1px solid #000000;
+            border-radius: 3px;
+        }
+        QSlider::handle:horizontal {
+            width: 18px;
+            height: 18px;
+            margin: -6px 0;
+            background: #FFFFFF;
+            border: 2px solid #FF3344;
+            border-radius: 9px;
+        }
+        QSlider::handle:horizontal:hover {
+            background: #FF3344;
+            border: 2px solid #FFFFFF;
+        }
+        QSlider::handle:horizontal:pressed {
+            background: #000000;
+            border: 2px solid #FF3344;
+        }
+        """
 
     def controlButtons(self, iconPath):
         Button = QPushButton()
@@ -263,7 +300,7 @@ class MainUi(object):
         Button.setStyleSheet(
             "border: none; background: transparent; color: white; font-weight: bold;"
         )
-        self.navLayout.addWidget(Button)
+        return Button
 
     # Update Icon ---- Section
     def updatePlayPauseIcon(self, state):
@@ -359,9 +396,14 @@ class MainUi(object):
 
         # Add selected files to playlist
         item = self.addPlaylistItem(filePath)
-        self.playlistWidget.setCurrentItem(item)
-        self.currentIndex = self.playlistWidget.row(item)
-        self.playMedia(filePath)
+        if self.currentIndex == -1:
+            self.currentIndex = self.playlistWidget.row(item)
+            self.playlistWidget.setCurrentItem(item)
+            self.playMedia(filePath)
+
+    def addFilesToPlaylist(self, file_paths):
+        for files in file_paths:
+            self.addPlaylistItem(files)
 
     def playMedia(self, filePath):
         page = self.controller.loadMedia(filePath)
@@ -470,3 +512,14 @@ class MainUi(object):
         self.playlistWidget.setCurrentItem(item)
         file_path = item.data(Qt.ItemDataRole.UserRole)
         self.playMedia(file_path)
+
+    def openFiles(self):
+        file_paths, _ = QFileDialog.getOpenFileNames(
+            self.MainWindow,
+            "Open Media File",
+            "",
+            "Media Files (*.mp3 *.m4a *.aac *.wav *.flac *.ogg *.wma *.mp4 *.mkv *.webm *.avi *.mov *.wmv);; All Files (*.*)",
+        )
+
+        for file_path in file_paths:
+            self.onFileSelected(file_path)
