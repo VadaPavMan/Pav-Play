@@ -56,6 +56,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
+from core.formats import Formats
 
 
 class PlayerController:
@@ -65,13 +66,13 @@ class PlayerController:
         self.audioOutput = QAudioOutput()
         self.mediaPlayer.setAudioOutput(self.audioOutput)
         self.mediaPlayer.setVideoOutput(videoWidget)
-        os.environ["QT_MULTIMEDIA_BACKEND"] = "ffmpeg"
+        Formats.setMultiMediaBackend
         
     # IMP
     def loadMedia(self, filePath):
         extension = os.path.splitext(filePath)[1].lower()
-        video_exts = {".mp4", ".mkv", ".avi", ".mov", ".webm", ".wmv"}
-        audio_exts = {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".aac", ".wma"}
+        video_exts = Formats.VIDEOS
+        audio_exts = Formats.AUDIOS
 
         if extension in video_exts:
             page = "video"

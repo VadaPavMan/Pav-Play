@@ -63,6 +63,7 @@ from widgets.drop_area import DropArea
 from controllers.player_controller import PlayerController
 from controllers.formatTime import formatTime
 from icons import Icons
+from core.formats import Formats
 
 WIDTH = 1280
 HEIGHT = 720
@@ -123,6 +124,7 @@ class MainUi(object):
 
         # OpenFolder Button
         self.openFolderBtn = self.navButtons("", Icons.FOLDER)
+        self.openFolderBtn.clicked.connect(self.openFolder)
         self.navLayout.addWidget(self.openFolderBtn)
 
         # ThemeToggle Button
@@ -390,9 +392,12 @@ class MainUi(object):
         self.placeHolderLayout.addWidget(self.dropArea)
         self.playerStack.addWidget(self.placeHolder)
 
-    # Sets Page According to Media Format...
+    # File Selection + Sets Page According to Media Format...
     def onFileSelected(self, filePath):
         print("Selected:", filePath)
+        
+        if not os.path.isfile(filePath):
+            return
 
         # Add selected files to playlist
         item = self.addPlaylistItem(filePath)
@@ -518,8 +523,30 @@ class MainUi(object):
             self.MainWindow,
             "Open Media File",
             "",
-            "Media Files (*.mp3 *.m4a *.aac *.wav *.flac *.ogg *.wma *.mp4 *.mkv *.webm *.avi *.mov *.wmv);; All Files (*.*)",
+            Formats.ALL_MEDIA_IMPORT,
         )
 
         for file_path in file_paths:
+            self.onFileSelected(file_path)
+        
+    def openFolder(self):
+        folder_path = QFileDialog.getExistingDirectory(self.MainWindow, "Select Media Folder")
+        
+        if not folder_path:
+            return
+        
+        media_files = []
+        
+        for file_name in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file_name)
+            
+            if not os.path.isfile(file_path):
+                continue
+            
+            extension = os.path.splitext(file_name)[1].lower()
+            
+            if extension in Formats.SUPPORTED_FORMATS_SET:
+                media_files.append(file_path)
+                
+        for file_path in media_files:
             self.onFileSelected(file_path)
