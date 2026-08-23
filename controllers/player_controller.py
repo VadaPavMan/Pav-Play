@@ -66,7 +66,7 @@ class PlayerController:
         self.audioOutput = QAudioOutput()
         self.mediaPlayer.setAudioOutput(self.audioOutput)
         self.mediaPlayer.setVideoOutput(videoWidget)
-        Formats.setMultiMediaBackend
+        os.environ["QT_MULTIMEDIA_BACKEND"] = "ffmpeg"
         
     # IMP
     def loadMedia(self, filePath):

@@ -363,8 +363,14 @@ class MainUi(object):
         )
         self.controller.mediaPlayer.positionChanged.connect(self.updatePosition)
         self.controller.mediaPlayer.durationChanged.connect(self.updateDuration)
+        
+        self.controller.mediaPlayer.mediaStatusChanged.connect(self.mediaStatusChanged)
 
         self.playerStack.setCurrentIndex(0)
+        
+    def mediaStatusChanged(self, status):
+        if status == QMediaPlayer.MediaStatus.EndOfMedia:
+            self.playNext()
 
     def setupPlaceholderPage(self):
         self.placeHolder = QWidget()
@@ -405,7 +411,8 @@ class MainUi(object):
             self.currentIndex = self.playlistWidget.row(item)
             self.playlistWidget.setCurrentItem(item)
             self.playMedia(filePath)
-
+    
+    # will you it later
     def addFilesToPlaylist(self, file_paths):
         for files in file_paths:
             self.addPlaylistItem(files)
