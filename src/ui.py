@@ -38,6 +38,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
+    QGridLayout,
     QListWidget,
     QListWidgetItem,
     QSplitter,
@@ -73,6 +74,8 @@ class MainUi(object):
     def __init__(self):
         # for media playback
         self.currentIndex = -1
+
+        self.currentFile = None
 
     def setup(self, MainWindow):
         self.MainWindow = MainWindow
@@ -178,8 +181,31 @@ class MainUi(object):
 
         self.controlsLayout.addLayout(self.progressLayout)
 
+        # Volume Section
+        self.volumeLayout = QHBoxLayout()
+        self.volumeLayout.setSpacing(8)
+
+        self.volumeButton = self.controlButtons(Icons.SPEAKER)
+        self.volumeButton.setIconSize(QSize(42, 42))
+
+        # --  volume Slider
+        self.volumeSlider = QSlider(Qt.Orientation.Horizontal)
+        self.volumeSlider.setRange(0, 100)
+        self.volumeSlider.setValue(100)
+        self.volumeSlider.setFixedWidth(120)
+
+        self.volumeLayout.addWidget(
+            self.volumeButton, alignment=Qt.AlignmentFlag.AlignVCenter
+        )
+        self.volumeLayout.addWidget(
+            self.volumeSlider, alignment=Qt.AlignmentFlag.AlignVCenter
+        )
+
+        # Slider stylesheet
+        self.volumeSlider.setStyleSheet(self.SliderStyle())
+
         # Buttons Section + Connection
-        self.bottomLayout = QHBoxLayout()
+        self.bottomLayout = QGridLayout()
         self.bottomLayout.setContentsMargins(0, 5, 0, 0)
 
         self.transportLayout = QHBoxLayout()
@@ -198,48 +224,52 @@ class MainUi(object):
         self.nextButton = self.controlButtons(Icons.NEXT)
         self.nextButton.clicked.connect(self.playNext)
 
-        self.transportLayout.addWidget(self.previousButton)
-        self.transportLayout.addWidget(self.playPauseButton)
-        self.transportLayout.addWidget(self.nextButton)
-
-        self.bottomLayout.addStretch()
-
-        self.bottomLayout.addLayout(self.transportLayout)
-
-        self.bottomLayout.addStretch()
-
-        # Volume Section
-        self.volumeLayout = QHBoxLayout()
-        self.volumeLayout.setSpacing(8)
-
-        self.volumeButton = self.controlButtons(Icons.SPEAKER)
-        self.volumeButton.setIconSize(QSize(42, 42))
-
-        # --  volume Slider
-        self.volumeSlider = QSlider(Qt.Orientation.Horizontal)
-        self.volumeSlider.setRange(0, 100)
-        self.volumeSlider.setValue(100)
-        self.volumeSlider.setFixedWidth(120)
-
-        self.volumeLayout.addWidget(self.volumeButton)
-        self.volumeLayout.addWidget(self.volumeSlider)
-
-        # Slider stylesheet
-        self.volumeSlider.setStyleSheet(self.SliderStyle())
-
-        self.bottomLayout.addLayout(self.volumeLayout)
+        self.transportLayout.addWidget(
+            self.previousButton, alignment=Qt.AlignmentFlag.AlignVCenter
+        )
+        self.transportLayout.addWidget(
+            self.playPauseButton, alignment=Qt.AlignmentFlag.AlignVCenter
+        )
+        self.transportLayout.addWidget(
+            self.nextButton, alignment=Qt.AlignmentFlag.AlignVCenter
+        )
 
         # Status
         self.statusLabel = QLabel("Ready")
-        self.statusLabel.setStyleSheet("color: #CCCCCC; font-size: 12px;")
-        self.bottomLayout.addSpacing(15)
-        self.bottomLayout.addWidget(self.statusLabel)
+        statusFont = QFont("Segoe UI", 10)
+        statusFont.setWeight(QFont.Weight.DemiBold)
+        self.statusLabel.setFont(statusFont)
+        self.statusLabel.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.statusLabel.setStyleSheet("""
+            QLabel {
+                color: #F2F2F2;
+                background-color: #292929;
+                border: 1px solid #424242;
+                border-radius: 14px;
+                padding: 7px 14px;
+            }
+        """)
+        self.bottomLayout.addLayout(self.volumeLayout, 0, 0, Qt.AlignmentFlag.AlignLeft)
+        self.bottomLayout.addLayout(
+            self.transportLayout, 0, 1, Qt.AlignmentFlag.AlignCenter
+        )
+        self.bottomLayout.addWidget(self.statusLabel, 0, 2, Qt.AlignmentFlag.AlignRight)
+        self.bottomLayout.setColumnStretch(0, 1)
+        self.bottomLayout.setColumnStretch(2, 1)
 
         self.controlsLayout.addLayout(self.bottomLayout)
 
         # Control Bar Dark: #1E1E1E White: #C9C9C9
         self.controlsFrame.setStyleSheet("""background-color: #1E1E1E;
                                          border-radius: 12px;""")
+
+        # Initially set to disable
+        self.previousButton.setEnabled(False)
+        self.playPauseButton.setEnabled(False)
+        self.nextButton.setEnabled(False)
+        self.positionSlider.setEnabled(False)
 
         self.mainLayout.addWidget(self.controlsFrame, 2)
 
@@ -306,8 +336,19 @@ class MainUi(object):
 
     # Update Icon ---- Section
     def updatePlayPauseIcon(self, state):
+        file_name = os.path.basename(self.currentFile) if self.currentFile else None
+
         if state == QMediaPlayer.PlaybackState.PlayingState:
             self.playPauseButton.setIcon(QIcon(Icons.PAUSE))
+
+            if file_name:
+                self.statusLabel.setText(f"Playing: {file_name}")
+
+        elif state == QMediaPlayer.PlaybackState.PausedState:
+            self.playPauseButton.setIcon(QIcon(Icons.PLAY))
+
+            if file_name:
+                self.statusLabel.setText(f"Paused: {file_name}")
         else:
             self.playPauseButton.setIcon(QIcon(Icons.PLAY))
 
@@ -363,11 +404,11 @@ class MainUi(object):
         )
         self.controller.mediaPlayer.positionChanged.connect(self.updatePosition)
         self.controller.mediaPlayer.durationChanged.connect(self.updateDuration)
-        
+
         self.controller.mediaPlayer.mediaStatusChanged.connect(self.mediaStatusChanged)
 
         self.playerStack.setCurrentIndex(0)
-        
+
     def mediaStatusChanged(self, status):
         if status == QMediaPlayer.MediaStatus.EndOfMedia:
             self.playNext()
@@ -401,7 +442,7 @@ class MainUi(object):
     # File Selection + Sets Page According to Media Format...
     def onFileSelected(self, filePath):
         print("Selected:", filePath)
-        
+
         if not os.path.isfile(filePath):
             return
 
@@ -411,13 +452,14 @@ class MainUi(object):
             self.currentIndex = self.playlistWidget.row(item)
             self.playlistWidget.setCurrentItem(item)
             self.playMedia(filePath)
-    
+
     # will you it later
     def addFilesToPlaylist(self, file_paths):
         for files in file_paths:
             self.addPlaylistItem(files)
 
     def playMedia(self, filePath):
+        self.currentFile = filePath
         page = self.controller.loadMedia(filePath)
 
         if page == "video":
@@ -428,6 +470,14 @@ class MainUi(object):
             QMessageBox.warning(
                 self.MainWindow, "Unsupported", "Unsupported media format."
             )
+
+        file_name = os.path.basename(filePath)
+        self.statusLabel.setText(f"Playing: {file_name}")
+
+        self.previousButton.setEnabled(True)
+        self.playPauseButton.setEnabled(True)
+        self.nextButton.setEnabled(True)
+        self.positionSlider.setEnabled(True)
 
     def setupPlaylistArea(self):
         # Playlist Section
@@ -465,9 +515,69 @@ class MainUi(object):
                                         background-color: #333333;
                                     }
                                 """)
+        self.playlistWidget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.playlistWidget.customContextMenuRequested.connect(self.showPlaylistMenu)
 
         self.playlistLayout.addWidget(self.playlistWidget)
         self.playlistWidget.itemDoubleClicked.connect(self.playPlaylistItem)
+
+    def showPlaylistMenu(self, position):
+        item = self.playlistWidget.itemAt(position)
+
+        if item is None:
+            return
+
+        menu = QMenu(self.MainWindow)
+        playAction = menu.addAction("Play")
+        removeAction = menu.addAction("Remove")
+
+        menu.addSeparator()
+
+        clearAction = menu.addAction("Clear Playlist")
+
+        action = menu.exec(self.playlistWidget.mapToGlobal(position))
+        
+        if action == playAction:
+            self.playPlaylistItem(item)
+        elif action == removeAction:
+            self.removePlaylistItem(item)
+        elif action == clearAction:
+            self.clearPlaylist()
+    
+    def removePlaylistItem(self, item):
+        
+        row = self.playlistWidget.row(item)
+        
+        if row == self.currentIndex:
+            return
+        
+        self.playlistWidget.takeItem(row)
+        
+        if row < self.currentIndex:
+            self.currentIndex -= 1
+        
+    def clearPlaylist(self):
+        
+        self.controller.stop()
+        
+        self.playlistWidget.clear()
+        
+        self.currentIndex = -1
+        self.currentFile = None
+        
+        self.playerStack.setCurrentIndex(0)
+        
+        self.previousButton.setEnabled(False)
+        self.playPauseButton.setEnabled(False)
+        self.nextButton.setEnabled(False)
+        self.positionSlider.setEnabled(False)
+    
+        self.positionSlider.setValue(0)
+        self.currentTimeLabel.setText("0:00")
+        self.totalTimeLabel.setText("0:00")
+    
+        self.statusLabel.setText("Ready")
+        
 
     def addPlaylistItem(self, file_path):
         # Check Duplicates
@@ -535,25 +645,27 @@ class MainUi(object):
 
         for file_path in file_paths:
             self.onFileSelected(file_path)
-        
+
     def openFolder(self):
-        folder_path = QFileDialog.getExistingDirectory(self.MainWindow, "Select Media Folder")
-        
+        folder_path = QFileDialog.getExistingDirectory(
+            self.MainWindow, "Select Media Folder"
+        )
+
         if not folder_path:
             return
-        
+
         media_files = []
-        
+
         for file_name in os.listdir(folder_path):
             file_path = os.path.join(folder_path, file_name)
-            
+
             if not os.path.isfile(file_path):
                 continue
-            
+
             extension = os.path.splitext(file_name)[1].lower()
-            
+
             if extension in Formats.SUPPORTED_FORMATS_SET:
                 media_files.append(file_path)
-                
+
         for file_path in media_files:
             self.onFileSelected(file_path)
