@@ -1,4 +1,3 @@
-````markdown
 # 🎵 Pav Play
 
 Pav Play is a simple and lightweight **media player built with Python and PySide6**.
