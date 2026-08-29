@@ -187,12 +187,14 @@ class MainUi(object):
 
         self.volumeButton = self.controlButtons(Icons.SPEAKER)
         self.volumeButton.setIconSize(QSize(42, 42))
+        self.volumeButton.clicked.connect(self.toggleMute)
 
         # --  volume Slider
         self.volumeSlider = QSlider(Qt.Orientation.Horizontal)
         self.volumeSlider.setRange(0, 100)
         self.volumeSlider.setValue(100)
         self.volumeSlider.setFixedWidth(120)
+        self.volumeSlider.valueChanged.connect(self.changeVolume)
 
         self.volumeLayout.addWidget(
             self.volumeButton, alignment=Qt.AlignmentFlag.AlignVCenter
@@ -246,7 +248,7 @@ class MainUi(object):
             QLabel {
                 color: #F2F2F2;
                 background-color: #292929;
-                border: 1px solid #424242;
+                border: 2px;
                 border-radius: 14px;
                 padding: 7px 14px;
             }
@@ -272,6 +274,25 @@ class MainUi(object):
         self.positionSlider.setEnabled(False)
 
         self.mainLayout.addWidget(self.controlsFrame, 2)
+        
+    def changeVolume(self, value):
+        volume = value / 100
+        self.controller.audioOutput.setVolume(volume)
+        
+        if self.controller.audioOutput.isMuted():
+            self.controller.audioOutput.setMuted(False)
+            self.volumeButton.setIcon(QIcon(Icons.SPEAKER))
+            
+        
+    def toggleMute(self):
+        muted = self.controller.audioOutput.isMuted()
+        
+        self.controller.audioOutput.setMuted(not muted)
+        
+        if muted:
+            self.volumeButton.setIcon(QIcon(Icons.SPEAKER))
+        else:
+            self.volumeButton.setIcon(QIcon(Icons.MUTE))
 
     def SliderStyle(self):
         return """
@@ -536,48 +557,47 @@ class MainUi(object):
         clearAction = menu.addAction("Clear Playlist")
 
         action = menu.exec(self.playlistWidget.mapToGlobal(position))
-        
+
         if action == playAction:
             self.playPlaylistItem(item)
         elif action == removeAction:
             self.removePlaylistItem(item)
         elif action == clearAction:
             self.clearPlaylist()
-    
+
     def removePlaylistItem(self, item):
-        
+
         row = self.playlistWidget.row(item)
-        
+
         if row == self.currentIndex:
             return
-        
+
         self.playlistWidget.takeItem(row)
-        
+
         if row < self.currentIndex:
             self.currentIndex -= 1
-        
+
     def clearPlaylist(self):
-        
+
         self.controller.stop()
-        
+
         self.playlistWidget.clear()
-        
+
         self.currentIndex = -1
         self.currentFile = None
-        
+
         self.playerStack.setCurrentIndex(0)
-        
+
         self.previousButton.setEnabled(False)
         self.playPauseButton.setEnabled(False)
         self.nextButton.setEnabled(False)
         self.positionSlider.setEnabled(False)
-    
+
         self.positionSlider.setValue(0)
         self.currentTimeLabel.setText("0:00")
         self.totalTimeLabel.setText("0:00")
-    
+
         self.statusLabel.setText("Ready")
-        
 
     def addPlaylistItem(self, file_path):
         # Check Duplicates

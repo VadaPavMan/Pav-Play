@@ -67,7 +67,7 @@ class PlayerController:
         self.mediaPlayer.setAudioOutput(self.audioOutput)
         self.mediaPlayer.setVideoOutput(videoWidget)
         os.environ["QT_MULTIMEDIA_BACKEND"] = "ffmpeg"
-        
+
     # IMP
     def loadMedia(self, filePath):
         extension = os.path.splitext(filePath)[1].lower()
@@ -91,12 +91,14 @@ class PlayerController:
 
     def pause(self):
         self.mediaPlayer.pause()
-        
+
     def stop(self):
         self.mediaPlayer.stop()
-        
+
     def togglePlayPause(self):
         if self.mediaPlayer.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self.mediaPlayer.pause()
         else:
             self.mediaPlayer.play()
+
+        
