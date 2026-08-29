@@ -1,3 +1,4 @@
 - App Icon: Xnimrodx (https://www.flaticon.com/kr/authors/xnimrodx)
 - Buttons Icon: Muhammad Ali (https://www.flaticon.com/authors/muhammad-ali)
 - Dashboard Hero Icon: Eucalyp (https://www.flaticon.com/authors/eucalyp)
+- Audio Page Design Inspiration: Miti Abulaiti (https://www.figma.com/community/file/892200806551521437/neomorphism-music-player-for-desktop)

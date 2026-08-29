@@ -274,21 +274,20 @@ class MainUi(object):
         self.positionSlider.setEnabled(False)
 
         self.mainLayout.addWidget(self.controlsFrame, 2)
-        
+
     def changeVolume(self, value):
         volume = value / 100
         self.controller.audioOutput.setVolume(volume)
-        
+
         if self.controller.audioOutput.isMuted():
             self.controller.audioOutput.setMuted(False)
             self.volumeButton.setIcon(QIcon(Icons.SPEAKER))
-            
-        
+
     def toggleMute(self):
         muted = self.controller.audioOutput.isMuted()
-        
+
         self.controller.audioOutput.setMuted(not muted)
-        
+
         if muted:
             self.volumeButton.setIcon(QIcon(Icons.SPEAKER))
         else:
@@ -410,11 +409,122 @@ class MainUi(object):
         self.videoLayout.addWidget(self.videoWidget)
         self.playerStack.addWidget(self.videoPage)
 
-        # Page 3 (Music Player)
+        # Page 3 (Audio Player)
         self.musicPage = QWidget()
-        self.musicPlayerLayout = QVBoxLayout(self.musicPage)
-        self.musicPlayerLayout.addWidget(QLabel("Audio Player"))
+        self.musicPlayerLayout = QHBoxLayout(self.musicPage)
+        self.musicPlayerLayout.setContentsMargins(35, 35, 35, 35)
+        self.musicPlayerLayout.setSpacing(20)
+
+        # Icon Load
+        self.musicIcon = QLabel()
+        musicPixmap = QPixmap(Icons.MUSIC)
+        musicPixmap = musicPixmap.scaled(
+            220,
+            220,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self.musicIcon.setPixmap(musicPixmap)
+
+        self.musicIcon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Hero Icon Frame
+        self.albumArtFrame = QFrame()
+        self.albumArtFrame.setObjectName("albumArtFrame")
+        self.albumArtLayout = QVBoxLayout(self.albumArtFrame)
+        self.albumArtLayout.addWidget(self.musicIcon)
+
+        self.albumArtLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Now Playing
+        self.nowPlayingFrame = QFrame()
+        self.nowPlayingFrame.setObjectName("nowPlayingFrame")
+        self.nowPlayingLayout = QVBoxLayout(self.nowPlayingFrame)
+        self.nowPlayingLayout.setSpacing(15)
+
+        self.nowPlayingTitle = QLabel("Now Playing")
+        self.nowPlayingTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.nowPlayingTitle.setObjectName("nowPlayingTitle")
+
+        self.nowPlayingLayout.addWidget(self.nowPlayingTitle)
+
+        self.songLayout = QHBoxLayout()
+
+        self.songNameLabel = QLabel("Song Name (Title)")
+
+        self.songNameLabel.setObjectName("songNameLabel")
+
+        self.songButton = QPushButton("BTN")
+
+        self.songButton.setFixedSize(55, 55)
+
+        self.songLayout.addWidget(self.songNameLabel, 1)
+
+        self.songLayout.addWidget(self.songButton)
+
+        self.nowPlayingLayout.addLayout(self.songLayout)
+
+        self.artistLayout = QHBoxLayout()
+
+        self.artistInfoLabel = QLabel(
+            "Author Name\n\n" "Lyrics will\n" "implement this\n" "later"
+        )
+
+        self.artistInfoLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.artistInfoLabel.setWordWrap(True)
+
+        # Right-side buttons
+
+        self.artistButtonsLayout = QVBoxLayout()
+
+        self.artistButton1 = QPushButton("BTN")
+        self.artistButton2 = QPushButton("BTN")
+
+        self.artistButton1.setFixedSize(55, 55)
+        self.artistButton2.setFixedSize(55, 55)
+
+        self.artistButtonsLayout.addWidget(self.artistButton1)
+
+        self.artistButtonsLayout.addWidget(self.artistButton2)
+
+        self.artistButtonsLayout.addStretch()
+
+        # Combine
+
+        self.artistLayout.addWidget(self.artistInfoLabel, 1)
+
+        self.artistLayout.addLayout(self.artistButtonsLayout)
+
+        self.nowPlayingLayout.addLayout(self.artistLayout)
+
+        self.musicPlayerLayout.addWidget(self.albumArtFrame, 2)
+        self.musicPlayerLayout.addWidget(self.nowPlayingFrame, 3)
         self.playerStack.addWidget(self.musicPage)
+
+        self.albumArtFrame.setStyleSheet("""
+            QFrame {
+                background-color: #303030;
+                border: 2px solid #555555;
+                border-radius: 15px;
+            }
+        """)
+
+        self.nowPlayingFrame.setStyleSheet("""
+            QFrame {
+                background-color: #303030;
+                border: 2px solid #555555;
+                border-radius: 15px;
+            }
+        """)
+
+        self.nowPlayingTitle.setStyleSheet("""
+            QLabel {
+                color: white;
+                font-size: 28px;
+                font-weight: bold;
+            }
+        """)
 
         # Media Setup Controller (Default Video Player)
         self.controller = PlayerController(self.videoWidget)
