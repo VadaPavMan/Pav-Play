@@ -11,9 +11,9 @@ The goal of this project is to create a clean desktop media player capable of pl
 ---
 
 ## Screenshots:
-[preview1](screenshots\preview1.png)
-[preview2](screenshots\preview2.png)
-[preview3](screenshots\preview3.png)
+[preview1](screenshots/preview1.png)
+[preview2](screenshots/preview2.png)
+[preview3](screenshots/preview3.png)
 
 ## ✨ Current Features
 
