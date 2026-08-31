@@ -356,7 +356,15 @@ class MainUi(object):
         return Button
 
     def audioOutlineCard(
-        self, text, font_size=20, bold=True, min_height=58, padding="12px 18px", text_color= "#F2F2F2", bg_color= "transparent"
+        self,
+        text,
+        font_size=20,
+        bold=True,
+        min_height=58,
+        padding="12px 18px",
+        text_color="#F2F2F2",
+        bg_color="transparent",
+        border_color="#E6E6E6",
     ):
         label = QLabel(text)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -366,7 +374,7 @@ class MainUi(object):
             QLabel {{
                 color: {text_color};
                 background-color: {bg_color};
-                border: 2px solid #E6E6E6;
+                border: 2px solid {border_color};
                 border-radius: 18px;
                 font-size: {font_size}px;
                 font-weight: {weight};
@@ -383,20 +391,20 @@ class MainUi(object):
         button.setStyleSheet("""
             QPushButton {
                 color: #F2F2F2;
-                background-color: transparent;
-                border: 2px solid #E6E6E6;
+                background-color: #181818;
+                border: 2px solid #FF3344;
                 border-radius: 32px;
                 font-size: 20px;
                 font-weight: bold;
             }
             QPushButton:hover {
                 color: #FF3344;
-                border-color: #FF3344;
+                border-color: #F2F2F2;
             }
             QPushButton:checked {
                 color: #FF3344;
                 border-color: #FF3344;
-                background-color: rgba(255, 51, 68, 35);
+                background-color: #121212;
             }
         """)
         return button
@@ -505,7 +513,14 @@ class MainUi(object):
 
         # Header label — small, so it doesn't compete with the song title
         self.nowPlayingTitle = self.audioOutlineCard(
-            "Now Playing", font_size=18, bold=True, min_height=46, padding="8px 18px", text_color="#FF3344", bg_color= "#F2F2F2"
+            "Now Playing",
+            font_size=18,
+            bold=True,
+            min_height=46,
+            padding="8px 18px",
+            text_color="#FF3344",
+            bg_color="#F2F2F2",
+            border_color="black",
         )
         self.nowPlayingLayout.addWidget(self.nowPlayingTitle)
         self.nowPlayingLayout.addSpacing(20)
@@ -517,19 +532,26 @@ class MainUi(object):
             bold=True,
             min_height=76,
             padding="16px 22px",
+            bg_color="#181818",
+            border_color="#FF3344",
         )
         self.nowPlayingLayout.addWidget(self.songNameLabel)
         self.nowPlayingLayout.addSpacing(20)
 
         # Subtitle — smaller and lighter than both cards above
         self.artistInfoLabel = self.audioOutlineCard(
-            "Author Name", font_size=15, bold=False, min_height=38, padding="6px 18px"
+            "Author Name",
+            font_size=15,
+            bold=True,
+            min_height=38,
+            padding="6px 18px",
+            text_color="#FF3344",
+            bg_color="#F2F2F2",
+            border_color="black",
         )
         self.nowPlayingLayout.addWidget(self.artistInfoLabel)
         self.nowPlayingLayout.addSpacing(14)
 
-        # Row of circular action buttons (like, add to playlist, more) —
-        # grouped closer to Author Name than the gaps between the cards above
         self.artistButtonsLayout = QHBoxLayout()
         self.artistButtonsLayout.setSpacing(16)
         self.artistButtonsLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
