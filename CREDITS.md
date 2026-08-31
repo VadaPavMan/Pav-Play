@@ -2,3 +2,4 @@
 - Buttons Icon: Muhammad Ali (https://www.flaticon.com/authors/muhammad-ali)
 - Dashboard Hero Icon: Eucalyp (https://www.flaticon.com/authors/eucalyp)
 - Audio Page Design Inspiration: Miti Abulaiti (https://www.figma.com/community/file/892200806551521437/neomorphism-music-player-for-desktop)
+- Audio Page Hero Graphic: Storyset (https://www.magnific.com/es/autor/stories)

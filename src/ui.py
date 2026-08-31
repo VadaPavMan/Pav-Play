@@ -57,6 +57,7 @@ from PySide6.QtWidgets import (
     QToolTip,
     QSpacerItem,
     QToolButton,
+    QGraphicsDropShadowEffect,
 )
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
@@ -354,6 +355,59 @@ class MainUi(object):
         )
         return Button
 
+    def audioOutlineCard(
+        self, text, font_size=20, bold=True, min_height=58, padding="12px 18px"
+    ):
+        # Outlined, transparent rounded-rect label used for Now Playing /
+        # Song Name / Author Name on the audio page (wireframe-style cards).
+        # Size/weight vary per card to create a clear visual hierarchy:
+        # Song Name is the star (largest), Now Playing is a header label,
+        # Author Name is a smaller subtitle.
+        label = QLabel(text)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setMinimumHeight(min_height)
+        weight = 700 if bold else 500
+        label.setStyleSheet(f"""
+            QLabel {{
+                color: #F2F2F2;
+                background-color: transparent;
+                border: 2px solid #E6E6E6;
+                border-radius: 18px;
+                font-size: {font_size}px;
+                font-weight: {weight};
+                padding: {padding};
+            }}
+        """)
+        return label
+
+    def audioOutlineButton(self, text, checkable=False):
+        # Outlined circular ghost button used for the row of action buttons
+        # (like, add to playlist, more) beneath the audio page cards
+        button = QPushButton(text)
+        button.setFixedSize(64, 64)
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
+        button.setCheckable(checkable)
+        button.setStyleSheet("""
+            QPushButton {
+                color: #F2F2F2;
+                background-color: transparent;
+                border: 2px solid #E6E6E6;
+                border-radius: 32px;
+                font-size: 20px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                color: #FF3344;
+                border-color: #FF3344;
+            }
+            QPushButton:checked {
+                color: #FF3344;
+                border-color: #FF3344;
+                background-color: rgba(255, 51, 68, 35);
+            }
+        """)
+        return button
+
     # Update Icon ---- Section
     def updatePlayPauseIcon(self, state):
         file_name = os.path.basename(self.currentFile) if self.currentFile else None
@@ -411,120 +465,95 @@ class MainUi(object):
 
         # Page 3 (Audio Player)
         self.musicPage = QWidget()
-        self.musicPlayerLayout = QHBoxLayout(self.musicPage)
-        self.musicPlayerLayout.setContentsMargins(35, 35, 35, 35)
-        self.musicPlayerLayout.setSpacing(20)
+        self.musicPageOuterLayout = QVBoxLayout(self.musicPage)
+        self.musicPageOuterLayout.setContentsMargins(0, 0, 0, 0)
 
-        # Icon Load
+        # One big outlined card wraps the whole audio page (hero + info)
+        self.musicPageFrame = QFrame()
+        self.musicPageFrame.setObjectName("musicPageFrame")
+        self.musicPageFrame.setStyleSheet("""
+            QFrame#musicPageFrame {
+                background-color: transparent;
+                border: 2px solid #3A3A3A;
+                border-radius: 28px;
+            }
+        """)
+        self.musicPlayerLayout = QHBoxLayout(self.musicPageFrame)
+        self.musicPlayerLayout.setContentsMargins(40, 40, 40, 40)
+        self.musicPlayerLayout.setSpacing(30)
+        self.musicPageOuterLayout.addWidget(self.musicPageFrame)
+
+        # ---- Left: Hero Illustration ----
+        self.albumArtFrame = QFrame()
+        self.albumArtFrame.setObjectName("albumArtFrame")
+        self.albumArtFrame.setStyleSheet("background: transparent; border: none;")
+        self.albumArtLayout = QVBoxLayout(self.albumArtFrame)
+        self.albumArtLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
         self.musicIcon = QLabel()
-        musicPixmap = QPixmap(Icons.MUSIC)
-        musicPixmap = musicPixmap.scaled(
-            220,
-            220,
+        heroPixmap = QPixmap(Icons.MUSICHERO_DARK)
+        heroPixmap = heroPixmap.scaled(
+            380,
+            380,
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )
-        self.musicIcon.setPixmap(musicPixmap)
-
+        self.musicIcon.setPixmap(heroPixmap)
         self.musicIcon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Hero Icon Frame
-        self.albumArtFrame = QFrame()
-        self.albumArtFrame.setObjectName("albumArtFrame")
-        self.albumArtLayout = QVBoxLayout(self.albumArtFrame)
         self.albumArtLayout.addWidget(self.musicIcon)
 
-        self.albumArtLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Now Playing
+        # ---- Right: Now Playing / Song Name / Author Name cards ----
         self.nowPlayingFrame = QFrame()
         self.nowPlayingFrame.setObjectName("nowPlayingFrame")
+        self.nowPlayingFrame.setStyleSheet("background: transparent; border: none;")
         self.nowPlayingLayout = QVBoxLayout(self.nowPlayingFrame)
-        self.nowPlayingLayout.setSpacing(15)
+        self.nowPlayingLayout.setSpacing(0)
+        self.nowPlayingLayout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
-        self.nowPlayingTitle = QLabel("Now Playing")
-        self.nowPlayingTitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.nowPlayingTitle.setObjectName("nowPlayingTitle")
-
-        self.nowPlayingLayout.addWidget(self.nowPlayingTitle)
-
-        self.songLayout = QHBoxLayout()
-
-        self.songNameLabel = QLabel("Song Name (Title)")
-
-        self.songNameLabel.setObjectName("songNameLabel")
-
-        self.songButton = QPushButton("BTN")
-
-        self.songButton.setFixedSize(55, 55)
-
-        self.songLayout.addWidget(self.songNameLabel, 1)
-
-        self.songLayout.addWidget(self.songButton)
-
-        self.nowPlayingLayout.addLayout(self.songLayout)
-
-        self.artistLayout = QHBoxLayout()
-
-        self.artistInfoLabel = QLabel(
-            "Author Name\n\n" "Lyrics will\n" "implement this\n" "later"
+        # Header label — small, so it doesn't compete with the song title
+        self.nowPlayingTitle = self.audioOutlineCard(
+            "Now Playing", font_size=18, bold=True, min_height=46, padding="8px 18px"
         )
+        self.nowPlayingLayout.addWidget(self.nowPlayingTitle)
+        self.nowPlayingLayout.addSpacing(20)
 
-        self.artistInfoLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # The star of the page — largest, boldest, tallest card
+        self.songNameLabel = self.audioOutlineCard(
+            "Song Name (Title)",
+            font_size=28,
+            bold=True,
+            min_height=76,
+            padding="16px 22px",
+        )
+        self.nowPlayingLayout.addWidget(self.songNameLabel)
+        self.nowPlayingLayout.addSpacing(20)
 
-        self.artistInfoLabel.setWordWrap(True)
+        # Subtitle — smaller and lighter than both cards above
+        self.artistInfoLabel = self.audioOutlineCard(
+            "Author Name", font_size=15, bold=False, min_height=38, padding="6px 18px"
+        )
+        self.nowPlayingLayout.addWidget(self.artistInfoLabel)
+        self.nowPlayingLayout.addSpacing(14)
 
-        # Right-side buttons
+        # Row of circular action buttons (like, add to playlist, more) —
+        # grouped closer to Author Name than the gaps between the cards above
+        self.artistButtonsLayout = QHBoxLayout()
+        self.artistButtonsLayout.setSpacing(16)
+        self.artistButtonsLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        self.artistButtonsLayout = QVBoxLayout()
+        self.songButton = self.audioOutlineButton("♥", checkable=True)
+        self.artistButton1 = self.audioOutlineButton("+")
+        self.artistButton2 = self.audioOutlineButton("⋮")
 
-        self.artistButton1 = QPushButton("BTN")
-        self.artistButton2 = QPushButton("BTN")
-
-        self.artistButton1.setFixedSize(55, 55)
-        self.artistButton2.setFixedSize(55, 55)
-
+        self.artistButtonsLayout.addWidget(self.songButton)
         self.artistButtonsLayout.addWidget(self.artistButton1)
-
         self.artistButtonsLayout.addWidget(self.artistButton2)
 
-        self.artistButtonsLayout.addStretch()
+        self.nowPlayingLayout.addLayout(self.artistButtonsLayout)
 
-        # Combine
-
-        self.artistLayout.addWidget(self.artistInfoLabel, 1)
-
-        self.artistLayout.addLayout(self.artistButtonsLayout)
-
-        self.nowPlayingLayout.addLayout(self.artistLayout)
-
-        self.musicPlayerLayout.addWidget(self.albumArtFrame, 2)
+        self.musicPlayerLayout.addWidget(self.albumArtFrame, 4)
         self.musicPlayerLayout.addWidget(self.nowPlayingFrame, 3)
         self.playerStack.addWidget(self.musicPage)
-
-        self.albumArtFrame.setStyleSheet("""
-            QFrame {
-                background-color: #303030;
-                border: 2px solid #555555;
-                border-radius: 15px;
-            }
-        """)
-
-        self.nowPlayingFrame.setStyleSheet("""
-            QFrame {
-                background-color: #303030;
-                border: 2px solid #555555;
-                border-radius: 15px;
-            }
-        """)
-
-        self.nowPlayingTitle.setStyleSheet("""
-            QLabel {
-                color: white;
-                font-size: 28px;
-                font-weight: bold;
-            }
-        """)
 
         # Media Setup Controller (Default Video Player)
         self.controller = PlayerController(self.videoWidget)

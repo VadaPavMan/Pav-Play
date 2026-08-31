@@ -10,6 +10,9 @@ class Icons:
     # Hero
     MULTIMEDIA = "assets\\hero\\multimedia.png"
     MUSIC = "assets\\hero\\music.png"
+    MUSICHERO = "assets\\hero\\musicHero.png"
+    MUSICHERO_DARK = "assets\\hero\\musicHeroDark.png"
+    MUSICHERO_WHITE = "assets\\hero\\musicHeroWhite.png"
     
     # Controls Icons
     PLAY = "assets\\controls\\play.png"
