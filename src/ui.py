@@ -356,21 +356,16 @@ class MainUi(object):
         return Button
 
     def audioOutlineCard(
-        self, text, font_size=20, bold=True, min_height=58, padding="12px 18px"
+        self, text, font_size=20, bold=True, min_height=58, padding="12px 18px", text_color= "#F2F2F2", bg_color= "transparent"
     ):
-        # Outlined, transparent rounded-rect label used for Now Playing /
-        # Song Name / Author Name on the audio page (wireframe-style cards).
-        # Size/weight vary per card to create a clear visual hierarchy:
-        # Song Name is the star (largest), Now Playing is a header label,
-        # Author Name is a smaller subtitle.
         label = QLabel(text)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label.setMinimumHeight(min_height)
         weight = 700 if bold else 500
         label.setStyleSheet(f"""
             QLabel {{
-                color: #F2F2F2;
-                background-color: transparent;
+                color: {text_color};
+                background-color: {bg_color};
                 border: 2px solid #E6E6E6;
                 border-radius: 18px;
                 font-size: {font_size}px;
@@ -381,8 +376,6 @@ class MainUi(object):
         return label
 
     def audioOutlineButton(self, text, checkable=False):
-        # Outlined circular ghost button used for the row of action buttons
-        # (like, add to playlist, more) beneath the audio page cards
         button = QPushButton(text)
         button.setFixedSize(64, 64)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -512,7 +505,7 @@ class MainUi(object):
 
         # Header label — small, so it doesn't compete with the song title
         self.nowPlayingTitle = self.audioOutlineCard(
-            "Now Playing", font_size=18, bold=True, min_height=46, padding="8px 18px"
+            "Now Playing", font_size=18, bold=True, min_height=46, padding="8px 18px", text_color="#FF3344", bg_color= "#F2F2F2"
         )
         self.nowPlayingLayout.addWidget(self.nowPlayingTitle)
         self.nowPlayingLayout.addSpacing(20)
