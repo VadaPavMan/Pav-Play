@@ -64,6 +64,7 @@ from PySide6.QtMultimediaWidgets import QVideoWidget
 from widgets.drop_area import DropArea
 from controllers.player_controller import PlayerController
 from controllers.formatTime import formatTime
+from controllers.metadata import get_artist
 from icons import Icons
 from core.formats import Formats
 
@@ -75,8 +76,8 @@ class MainUi(object):
     def __init__(self):
         # for media playback
         self.currentIndex = -1
-
         self.currentFile = None
+        self.file_name = "No track selected"
 
     def setup(self, MainWindow):
         self.MainWindow = MainWindow
@@ -411,21 +412,29 @@ class MainUi(object):
 
     # Update Icon ---- Section
     def updatePlayPauseIcon(self, state):
-        file_name = os.path.basename(self.currentFile) if self.currentFile else None
+        current_file = self.currentFile
+        if current_file is not None:
+            if hasattr(current_file, "toLocalFile"):
+                current_file = current_file.toLocalFile()
+            current_file = str(current_file)
+        self.file_name = os.path.basename(current_file) if current_file else None
 
         if state == QMediaPlayer.PlaybackState.PlayingState:
             self.playPauseButton.setIcon(QIcon(Icons.PAUSE))
-
-            if file_name:
-                self.statusLabel.setText(f"Playing: {file_name}")
+            if self.file_name:
+                self.statusLabel.setText(f"Playing: {self.file_name}")
+            else:
+                self.statusLabel.setText("Playing")
 
         elif state == QMediaPlayer.PlaybackState.PausedState:
             self.playPauseButton.setIcon(QIcon(Icons.PLAY))
-
-            if file_name:
-                self.statusLabel.setText(f"Paused: {file_name}")
+            if self.file_name:
+                self.statusLabel.setText(f"Paused: {self.file_name}")
+            else:
+                self.statusLabel.setText("Paused")
         else:
             self.playPauseButton.setIcon(QIcon(Icons.PLAY))
+            self.statusLabel.setText("Ready")
 
     # Update Section
     def updatePosition(self, position):
@@ -527,7 +536,7 @@ class MainUi(object):
 
         # The star of the page — largest, boldest, tallest card
         self.songNameLabel = self.audioOutlineCard(
-            "Song Name (Title)",
+            self.file_name,
             font_size=28,
             bold=True,
             min_height=76,
@@ -540,7 +549,7 @@ class MainUi(object):
 
         # Subtitle — smaller and lighter than both cards above
         self.artistInfoLabel = self.audioOutlineCard(
-            "Author Name",
+            "Author Name: Unknown",
             font_size=15,
             bold=True,
             min_height=38,
@@ -553,8 +562,8 @@ class MainUi(object):
         self.nowPlayingLayout.addSpacing(14)
 
         self.artistButtonsLayout = QHBoxLayout()
-        self.artistButtonsLayout.setSpacing(16)
-        self.artistButtonsLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.artistButtonsLayout.setSpacing(24)
+        self.artistButtonsLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.songButton = self.audioOutlineButton("♥", checkable=True)
         self.artistButton1 = self.audioOutlineButton("+")
@@ -635,19 +644,26 @@ class MainUi(object):
 
     def playMedia(self, filePath):
         self.currentFile = filePath
+        self.file_name = os.path.basename(filePath)
         page = self.controller.loadMedia(filePath)
 
         if page == "video":
             self.playerStack.setCurrentWidget(self.videoPage)
         elif page == "audio":
             self.playerStack.setCurrentWidget(self.musicPage)
+            if hasattr(self, "songNameLabel"):
+                self.songNameLabel.setText(self.file_name)
+
+            artist = get_artist(filePath)
+
+            if hasattr(self, "artistInfoLabel"):
+                self.artistInfoLabel.setText(f"Author Name: {artist}")
         else:
             QMessageBox.warning(
                 self.MainWindow, "Unsupported", "Unsupported media format."
             )
 
-        file_name = os.path.basename(filePath)
-        self.statusLabel.setText(f"Playing: {file_name}")
+        self.statusLabel.setText(f"Playing: {self.file_name}")
 
         self.previousButton.setEnabled(True)
         self.playPauseButton.setEnabled(True)
@@ -657,44 +673,138 @@ class MainUi(object):
     def setupPlaylistArea(self):
         # Playlist Section
         self.playlistFrame = QFrame()
-        # Media Playlist Frame Dark: #282828 White: #E6E6E6
-        self.playlistFrame.setStyleSheet("""background-color: #282828;
-                                           border-radius: 12px;""")
+        self.playlistFrame.setObjectName("playlistFrame")
+        self.playlistFrame.setStyleSheet("""
+            QFrame#playlistFrame {
+                background-color: #1E1E1E;
+                border-radius: 12px;
+            }
+        """)
 
         self.playlistLayout = QVBoxLayout(self.playlistFrame)
-        self.playlistLayout.setContentsMargins(10, 10, 10, 10)
+        self.playlistLayout.setContentsMargins(16, 16, 16, 14)
+        self.playlistLayout.setSpacing(12)
 
-        self.playlistLabel = QLabel("Play List")
-        self.playlistLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.playlistLayout.addWidget(self.playlistLabel)
+        # ---- Header: red eyebrow label + pill-style count badge ----
+        self.playlistHeaderLayout = QHBoxLayout()
+        self.playlistHeaderLayout.setSpacing(8)
+
+        self.playlistLabel = QLabel("PLAYLIST")
+        playlistFont = QFont("Segoe UI", 11)
+        playlistFont.setWeight(QFont.Weight.DemiBold)
+        self.playlistLabel.setFont(playlistFont)
+        self.playlistLabel.setStyleSheet("""
+            QLabel {
+              color: #FF3344;
+              font-weight: 700;
+              letter-spacing: 2px;
+              background: transparent;
+            }
+        """)
+        self.playlistHeaderLayout.addWidget(self.playlistLabel)
+        self.playlistHeaderLayout.addStretch()
+
+        self.playlistCountLabel = QLabel("0")
+        self.playlistCountLabel.setFixedHeight(22)
+        self.playlistCountLabel.setMinimumWidth(28)
+        self.playlistCountLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.playlistCountLabel.setStyleSheet("""
+            QLabel {
+                color: #F2F2F2;
+                background-color: #262626;
+                border: 1px solid #3A3A3A;
+                border-radius: 11px;
+                padding: 0px 8px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+        """)
+        self.playlistHeaderLayout.addWidget(self.playlistCountLabel)
+        self.playlistLayout.addLayout(self.playlistHeaderLayout)
+
+        # Thin divider separating the header from the list, matching the
+        # divider style used on the audio page
+        self.playlistDivider = QFrame()
+        self.playlistDivider.setFrameShape(QFrame.Shape.HLine)
+        self.playlistDivider.setStyleSheet(
+            "background-color: #2A2A2A; max-height: 1px; border: none;"
+        )
+        self.playlistLayout.addWidget(self.playlistDivider)
 
         self.playlistWidget = QListWidget()
+        self.playlistWidget.setSpacing(6)
+        self.playlistWidget.setFrameShape(QFrame.Shape.NoFrame)
+
+        self.playlistWidget.setIconSize(QSize(26, 26))
+
         self.playlistWidget.setStyleSheet("""
-                                    QListWidget {
-                                        background-color: #282828;
-                                        border: none;
-                                        color: white;
-                                        font-size: 14px;
-                                    }
-                                    
-                                    QListWidget::item {
-                                        padding: 10px;
-                                        border-radius: 6px;
-                                    }
-                                    
-                                    QListWidget::item:selected {
-                                        background-color: #3A3A3A;
-                                    }
-                                    
-                                    QListWidget::item:hover {
-                                        background-color: #333333;
-                                    }
-                                """)
+          QListWidget {
+              background-color: transparent;
+              border: none;
+              outline: none;
+              color: #F2F2F2;
+              font-family: "Segoe UI";
+              font-size: 13px;
+          }
+
+          QListWidget::item {
+              background-color: #262626;
+              border-left: 3px solid transparent;
+              border-radius: 10px;
+              padding: 10px 10px 10px 8px;
+              margin: 0px;
+          }
+
+          QListWidget::item:hover {
+              background-color: #2E2222;
+          }
+
+          QListWidget::item:selected {
+              background-color: rgba(255, 51, 68, 30);
+              color: #FF3344;
+              font-weight: 600;
+          }
+
+          QListWidget::item:selected:active {
+              background-color: rgba(255, 51, 68, 30);
+          }
+
+          QScrollBar:vertical {
+              background: transparent;
+              width: 6px;
+              margin: 2px;
+          }
+
+          QScrollBar::handle:vertical {
+              background: #3A3A3A;
+              border-radius: 3px;
+              min-height: 30px;
+          }
+
+          QScrollBar::handle:vertical:hover {
+              background: #FF3344;
+          }
+
+          QScrollBar::add-line:vertical,
+          QScrollBar::sub-line:vertical {
+              height: 0px;
+          }
+                                          """)
+
         self.playlistWidget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.playlistWidget.customContextMenuRequested.connect(self.showPlaylistMenu)
-
         self.playlistLayout.addWidget(self.playlistWidget)
         self.playlistWidget.itemDoubleClicked.connect(self.playPlaylistItem)
+
+    def getMediaIcon(self, file_path):
+        ext = os.path.splitext(file_path)[1].lower()
+
+        if ext in Formats.AUDIOS:
+            return QIcon(Icons.MUSIC)
+        elif ext in Formats.VIDEOS:
+            return QIcon(Icons.VIDEO)
+
+        return QIcon()
 
     def showPlaylistMenu(self, position):
         item = self.playlistWidget.itemAt(position)
@@ -731,11 +841,14 @@ class MainUi(object):
         if row < self.currentIndex:
             self.currentIndex -= 1
 
+        self.playlistCountLabel.setText(str(self.playlistWidget.count()))
+
     def clearPlaylist(self):
 
         self.controller.stop()
 
         self.playlistWidget.clear()
+        self.playlistCountLabel.setText("0")
 
         self.currentIndex = -1
         self.currentFile = None
@@ -766,7 +879,10 @@ class MainUi(object):
 
         item = QListWidgetItem(file_name)
         item.setData(Qt.ItemDataRole.UserRole, file_path)
+        item.setIcon(self.getMediaIcon(file_path))
         self.playlistWidget.addItem(item)
+
+        self.playlistCountLabel.setText(str(self.playlistWidget.count()))
 
         return item
 
