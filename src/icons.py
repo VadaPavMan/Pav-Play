@@ -20,6 +20,9 @@ class Icons:
     NEXT = "assets\\controls\\next.png"
     SPEAKER = "assets\\controls\\speaker.png"
     MUTE = "assets\\controls\\mute.png"
+    SHUFFLE = "assets\\controls\\shuffle.png"
+    LOOP = "assets\\controls\\loop.png"
+    LOOP_ONE = "assets\\controls\\loop_one.png"
     
     # Playlist Icons
     MUSIC = "assets\\playlist\\music.png"

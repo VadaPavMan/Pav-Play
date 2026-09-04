@@ -79,6 +79,9 @@ class MainUi(object):
         self.currentFile = None
         self.file_name = "No track selected"
 
+        # shuffle for random play back
+        self.shuffleList = False
+
     def setup(self, MainWindow):
         self.MainWindow = MainWindow
         self.setupWindow()
@@ -215,6 +218,10 @@ class MainUi(object):
         self.transportLayout = QHBoxLayout()
         self.transportLayout.setSpacing(12)
 
+        # shuffle button + connection
+        self.shuffleButton = self.controlButtons(Icons.SHUFFLE)
+        self.shuffleButton.clicked.connect(lambda: setattr(self, "shuffleList", True))
+
         # previous button + connection
         self.previousButton = self.controlButtons(Icons.PREVIOUS)
         self.previousButton.clicked.connect(self.playPrevious)
@@ -228,6 +235,12 @@ class MainUi(object):
         self.nextButton = self.controlButtons(Icons.NEXT)
         self.nextButton.clicked.connect(self.playNext)
 
+        # loop button + connection
+        self.loopButton = self.controlButtons(Icons.LOOP)
+
+        self.transportLayout.addWidget(
+            self.shuffleButton, alignment=Qt.AlignmentFlag.AlignVCenter
+        )
         self.transportLayout.addWidget(
             self.previousButton, alignment=Qt.AlignmentFlag.AlignVCenter
         )
@@ -236,6 +249,9 @@ class MainUi(object):
         )
         self.transportLayout.addWidget(
             self.nextButton, alignment=Qt.AlignmentFlag.AlignVCenter
+        )
+        self.transportLayout.addWidget(
+            self.loopButton, alignment=Qt.AlignmentFlag.AlignVCenter
         )
 
         # Status
@@ -270,9 +286,11 @@ class MainUi(object):
                                          border-radius: 12px;""")
 
         # Initially set to disable
+        self.shuffleButton.setEnabled(False)
         self.previousButton.setEnabled(False)
         self.playPauseButton.setEnabled(False)
         self.nextButton.setEnabled(False)
+        self.loopButton.setEnabled(False)
         self.positionSlider.setEnabled(False)
 
         self.mainLayout.addWidget(self.controlsFrame, 2)
@@ -338,8 +356,8 @@ class MainUi(object):
     def controlButtons(self, iconPath):
         Button = QPushButton()
         Button.setIcon(QIcon(iconPath))
-        Button.setIconSize(QSize(42, 42))
-        Button.setFixedSize(62, 62)
+        Button.setIconSize(QSize(48, 48))
+        Button.setFixedSize(64, 64)
         Button.setFlat(True)
         Button.setStyleSheet(
             "border: none; background: transparent; color: white; font-weight: bold;"
@@ -665,9 +683,11 @@ class MainUi(object):
 
         self.statusLabel.setText(f"Playing: {self.file_name}")
 
+        self.shuffleButton.setEnabled(True)
         self.previousButton.setEnabled(True)
         self.playPauseButton.setEnabled(True)
         self.nextButton.setEnabled(True)
+        self.loopButton.setEnabled(True)
         self.positionSlider.setEnabled(True)
 
     def setupPlaylistArea(self):
@@ -722,8 +742,6 @@ class MainUi(object):
         self.playlistHeaderLayout.addWidget(self.playlistCountLabel)
         self.playlistLayout.addLayout(self.playlistHeaderLayout)
 
-        # Thin divider separating the header from the list, matching the
-        # divider style used on the audio page
         self.playlistDivider = QFrame()
         self.playlistDivider.setFrameShape(QFrame.Shape.HLine)
         self.playlistDivider.setStyleSheet(
@@ -797,14 +815,31 @@ class MainUi(object):
         self.playlistWidget.itemDoubleClicked.connect(self.playPlaylistItem)
 
     def getMediaIcon(self, file_path):
+
         ext = os.path.splitext(file_path)[1].lower()
 
         if ext in Formats.AUDIOS:
-            return QIcon(Icons.MUSIC)
-        elif ext in Formats.VIDEOS:
-            return QIcon(Icons.VIDEO)
+            icon_path = Icons.MUSIC
 
-        return QIcon()
+        elif ext in Formats.VIDEOS:
+            icon_path = Icons.VIDEO
+
+        else:
+            return QIcon()
+
+        pixmap = QPixmap(icon_path)
+
+        icon = QIcon()
+
+        icon.addPixmap(pixmap, QIcon.Mode.Normal, QIcon.State.Off)
+
+        icon.addPixmap(pixmap, QIcon.Mode.Selected, QIcon.State.Off)
+
+        icon.addPixmap(pixmap, QIcon.Mode.Active, QIcon.State.Off)
+
+        icon.addPixmap(pixmap, QIcon.Mode.Disabled, QIcon.State.Off)
+
+        return icon
 
     def showPlaylistMenu(self, position):
         item = self.playlistWidget.itemAt(position)
