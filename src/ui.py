@@ -81,6 +81,14 @@ class MainUi(object):
 
         # shuffle for random play back
         self.shuffleList = False
+        
+        """
+        loop modes
+        - 0 loop off
+        - 1 loop playlist
+        - 2 loop one
+        """
+        self.loopMode = 0
 
     def setup(self, MainWindow):
         self.MainWindow = MainWindow
@@ -220,7 +228,7 @@ class MainUi(object):
 
         # shuffle button + connection
         self.shuffleButton = self.controlButtons(Icons.SHUFFLE)
-        self.shuffleButton.clicked.connect(lambda: setattr(self, "shuffleList", True))
+        self.shuffleButton.clicked.connect(self.toggleShuffle)
 
         # previous button + connection
         self.previousButton = self.controlButtons(Icons.PREVIOUS)
@@ -237,6 +245,7 @@ class MainUi(object):
 
         # loop button + connection
         self.loopButton = self.controlButtons(Icons.LOOP)
+        self.loopButton.clicked.connect(self.toggleLoop)
 
         self.transportLayout.addWidget(
             self.shuffleButton, alignment=Qt.AlignmentFlag.AlignVCenter
@@ -294,6 +303,27 @@ class MainUi(object):
         self.positionSlider.setEnabled(False)
 
         self.mainLayout.addWidget(self.controlsFrame, 2)
+        
+    def toggleShuffle(self):
+        self.shuffleList = not self.shuffleList
+        
+        if self.shuffleList:
+            self.statusLabel.setText("Shuffle: On")
+        else:
+            self.statusLabel.setText("Shuffle: Off")
+        
+    def toggleLoop(self):
+        self.loopMode = (self.loopMode + 1) % 3
+        
+        if self.loopMode == 0:
+            self.statusLabel.setText("Loop: Off")
+            self.loopButton.setIcon(QIcon(Icons.LOOP))
+        elif self.loopMode == 1:
+            self.statusLabel.setText("Loop: Playlist")
+            self.loopButton.setIcon(QIcon(Icons.LOOP))
+        elif self.loopMode == 2:
+            self.statusLabel.setText("Loop: One")
+            self.loopButton.setIcon(QIcon(Icons.LOOP_ONE))
 
     def changeVolume(self, value):
         volume = value / 100
@@ -610,10 +640,51 @@ class MainUi(object):
         self.controller.mediaPlayer.mediaStatusChanged.connect(self.mediaStatusChanged)
 
         self.playerStack.setCurrentIndex(0)
+        
+    def playRandom(self):
+        count = self.playlistWidget.count()
+        
+        if count == 0:
+            return 
+        
+        if count == 1:
+            return 
+        
+        availableIndexes = [
+            index for index in range(count)
+            if index != self.currentIndex
+        ]
+        
+        self.currentIndex = random.choice(availableIndexes)
+        item = self.playlistWidget.item(self.currentIndex)
+        self.playlistWidget.setCurrentItem(item)
+        
+        file_path = item.data(Qt.ItemDataRole.UserRole)
+        self.playMedia(file_path)
 
     def mediaStatusChanged(self, status):
-        if status == QMediaPlayer.MediaStatus.EndOfMedia:
+        if status != QMediaPlayer.MediaStatus.EndOfMedia:
+            return
+        
+        if self.loopMode == 2:
+            self.controller.mediaPlayer.setPosition(0)
+            self.controller.mediaPlayer.play()
+            return
+        
+        if self.shuffleList:
+            self.playRandom()
+            return
+        
+        if self.loopMode == 1:
             self.playNext()
+            return
+        
+        if self.currentIndex < self.playlistWidget.count() - 1:
+            self.playNext()
+            
+        else:
+            self.controller.stop()
+            
 
     def setupPlaceholderPage(self):
         self.placeHolder = QWidget()
@@ -931,11 +1002,18 @@ class MainUi(object):
     def playNext(self):
         if self.playlistWidget.count() == 0:
             return
+        
+        if self.shuffleList:
+            self.playRandom()
+            return
 
         if self.currentIndex < self.playlistWidget.count() - 1:
             self.currentIndex += 1
         elif self.currentIndex == self.playlistWidget.count() - 1:
-            self.currentIndex = 0
+            if self.loopMode == 1:
+                self.currentIndex = 0
+            else:
+                return
         else:
             return
 
