@@ -11,6 +11,7 @@ The goal of this project is to create a clean desktop media player capable of pl
 ---
 
 ## Screenshots:
+
 ![preview1](screenshots/preview1.png)
 ![preview2](screenshots/preview2.png)
 ![preview3](screenshots/preview3.png)
@@ -81,7 +82,7 @@ Clone the repository:
 
 ```bash
 git clone <https://github.com/VadaPavMan/Pav-Play>
-````
+```
 
 Install dependencies:
 
@@ -99,16 +100,16 @@ python src/main.py
 
 ## 🔮 Planned Features
 
-* Improved audio player interface
-* Better video controls
-* Media metadata display
-* Album artwork
-* Improved playlist management
-* Keyboard shortcuts
-* Settings system
-* UI improvements and animations
-* Codebase refactoring
-* Better media format handling
+- Improved audio player interface
+- Better video controls
+- Media metadata display
+- Album artwork
+- Improved playlist management
+- Keyboard shortcuts
+- Settings system
+- UI improvements and animations
+- Codebase refactoring
+- Better media format handling
 
 ---
 
@@ -122,25 +123,23 @@ Pav Play is currently in active development. Contributions, suggestions, and fee
 
 License information will be added in a future release.
 
-
-
 +--------------------------------------------------------+
-|                     Menu Bar                           |
+| Menu Bar |
 +--------------------------------------------------------+
-|                                                        |
-|   Album Art        Song Name                           |
-|                    Artist                              |
-|                                                        |
+| |
+| Album Art Song Name |
+| Artist |
+| |
 |--------------------------------------------------------|
-|                                                        |
-|               Playlist (QListWidget)                   |
-|                                                        |
-|                                                        |
-|                                                        |
+| |
+| Playlist (QListWidget) |
+| |
+| |
+| |
 |--------------------------------------------------------|
-| <<   ▶   >>     -----------Slider----------- 03:20     |
-|                                                        |
-| Volume 🔊 --------Slider-------------------            |
+| << ▶ >> -----------Slider----------- 03:20 |
+| |
+| Volume 🔊 --------Slider------------------- |
 +--------------------------------------------------------+
 
 # Refactoring job
@@ -148,28 +147,28 @@ License information will be added in a future release.
 PavPlay/
 │
 ├── pavplay/
-│   ├── __init__.py
-│   ├── main.py
-│   │
-│   ├── ui/
-│   │   ├── main_window.py
-│   │   ├── controls_bar.py
-│   │   └── navigation_bar.py
-│   │
-│   ├── controllers/
-│   │   ├── player_controller.py
-│   │   └── playlist_controller.py
-│   │
-│   ├── widgets/
-│   │   └── drop_area.py
-│   │
-│   ├── models/
-│   │   └── media_item.py
-│   │
-│   └── core/
-│       ├── icons.py
-│       ├── formats.py
-│       └── settings.py
+│ ├── **init**.py
+│ ├── main.py
+│ │
+│ ├── ui/
+│ │ ├── main_window.py
+│ │ ├── controls_bar.py
+│ │ └── navigation_bar.py
+│ │
+│ ├── controllers/
+│ │ ├── player_controller.py
+│ │ └── playlist_controller.py
+│ │
+│ ├── widgets/
+│ │ └── drop_area.py
+│ │
+│ ├── models/
+│ │ └── media_item.py
+│ │
+│ └── core/
+│ ├── icons.py
+│ ├── formats.py
+│ └── settings.py
 │
 ├── assets/
 ├── tests/
@@ -177,3 +176,7 @@ PavPlay/
 ├── CONTRIBUTING.md
 ├── TECH_DEBT.md
 └── requirements.txt
+
+# Repo Link:
+
+`https://github.com/VadaPavMan/Pav-Play`

@@ -67,6 +67,7 @@ from controllers.formatTime import formatTime
 from controllers.metadata import get_artist
 from icons import Icons
 from core.formats import Formats
+from core.link import Link
 
 WIDTH = 1280
 HEIGHT = 720
@@ -81,7 +82,7 @@ class MainUi(object):
 
         # shuffle for random play back
         self.shuffleList = False
-        
+
         """
         loop modes
         - 0 loop off
@@ -131,6 +132,7 @@ class MainUi(object):
 
         # AppIcon Button
         self.appiconBtn = self.navButtons("", Icons.APPICON)
+        self.appiconBtn.clicked.connect(lambda: Link.direct(Link.GITHUB_REPO))
         self.navLayout.addWidget(self.appiconBtn)
 
         # OpenFile Button
@@ -303,18 +305,18 @@ class MainUi(object):
         self.positionSlider.setEnabled(False)
 
         self.mainLayout.addWidget(self.controlsFrame, 2)
-        
+
     def toggleShuffle(self):
         self.shuffleList = not self.shuffleList
-        
+
         if self.shuffleList:
             self.statusLabel.setText("Shuffle: On")
         else:
             self.statusLabel.setText("Shuffle: Off")
-        
+
     def toggleLoop(self):
         self.loopMode = (self.loopMode + 1) % 3
-        
+
         if self.loopMode == 0:
             self.statusLabel.setText("Loop: Off")
             self.loopButton.setIcon(QIcon(Icons.LOOP))
@@ -640,51 +642,49 @@ class MainUi(object):
         self.controller.mediaPlayer.mediaStatusChanged.connect(self.mediaStatusChanged)
 
         self.playerStack.setCurrentIndex(0)
-        
+
     def playRandom(self):
         count = self.playlistWidget.count()
-        
+
         if count == 0:
-            return 
-        
+            return
+
         if count == 1:
-            return 
-        
+            return
+
         availableIndexes = [
-            index for index in range(count)
-            if index != self.currentIndex
+            index for index in range(count) if index != self.currentIndex
         ]
-        
+
         self.currentIndex = random.choice(availableIndexes)
         item = self.playlistWidget.item(self.currentIndex)
         self.playlistWidget.setCurrentItem(item)
-        
+
         file_path = item.data(Qt.ItemDataRole.UserRole)
         self.playMedia(file_path)
 
     def mediaStatusChanged(self, status):
         if status != QMediaPlayer.MediaStatus.EndOfMedia:
             return
-        
+
         if self.loopMode == 2:
             self.controller.mediaPlayer.setPosition(0)
             self.controller.mediaPlayer.play()
             return
-        
+
         if self.shuffleList:
             self.playRandom()
             return
-        
+
         if self.loopMode == 1:
             self.playNext()
             return
-        
+
         if self.currentIndex < self.playlistWidget.count() - 1:
             self.playNext()
-            
+
         else:
             self.controller.stop()
-            
 
     def setupPlaceholderPage(self):
         self.placeHolder = QWidget()
@@ -1002,7 +1002,7 @@ class MainUi(object):
     def playNext(self):
         if self.playlistWidget.count() == 0:
             return
-        
+
         if self.shuffleList:
             self.playRandom()
             return
