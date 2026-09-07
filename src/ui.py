@@ -133,25 +133,30 @@ class MainUi(object):
         # AppIcon Button
         self.appiconBtn = self.navButtons("", Icons.APPICON)
         self.appiconBtn.clicked.connect(lambda: Link.direct(Link.GITHUB_REPO))
+        self.appiconBtn.setToolTip("Pav Play")
         self.navLayout.addWidget(self.appiconBtn)
 
         # OpenFile Button
         self.openfilesBtn = self.navButtons("", Icons.FILES)
         self.openfilesBtn.clicked.connect(self.openFiles)
+        self.openfilesBtn.setToolTip("Files")
         self.navLayout.addWidget(self.openfilesBtn)
 
         # OpenFolder Button
         self.openFolderBtn = self.navButtons("", Icons.FOLDER)
         self.openFolderBtn.clicked.connect(self.openFolder)
+        self.openFolderBtn.setToolTip("Folders")
         self.navLayout.addWidget(self.openFolderBtn)
 
         # ThemeToggle Button
         self.themeToggleBtn = self.navButtons("", Icons.THEME)
+        self.themeToggleBtn.setToolTip("Dark/White")
         self.navLayout.addWidget(self.themeToggleBtn)
 
         # Settings Button
         self.navLayout.addStretch()
         self.settingsBtn = self.navButtons("", Icons.SETTINGS)
+        self.settingsBtn.setToolTip("Settings")
         self.navLayout.addWidget(self.settingsBtn)
 
         # Adding Buttons to layout
@@ -184,11 +189,14 @@ class MainUi(object):
         self.progressLayout = QHBoxLayout()
 
         self.currentTimeLabel = QLabel("0:00")
+        self.currentTimeLabel.setToolTip("Duration Label")
         self.positionSlider = QSlider(Qt.Orientation.Horizontal)
         self.positionSlider.setRange(0, 1000)
         self.positionSlider.sliderMoved.connect(self.seekPosition)
+        self.positionSlider.setToolTip("Slider")
         self.positionSlider.setStyleSheet(self.SliderStyle())
         self.totalTimeLabel = QLabel("0:00")
+        self.totalTimeLabel.setToolTip("Duration Label")
 
         self.progressLayout.addWidget(self.currentTimeLabel)
         self.progressLayout.addWidget(self.positionSlider)
@@ -202,6 +210,7 @@ class MainUi(object):
 
         self.volumeButton = self.controlButtons(Icons.SPEAKER)
         self.volumeButton.setIconSize(QSize(42, 42))
+        self.volumeButton.setToolTip("Volume: Mute/UnMute")
         self.volumeButton.clicked.connect(self.toggleMute)
 
         # --  volume Slider
@@ -209,6 +218,7 @@ class MainUi(object):
         self.volumeSlider.setRange(0, 100)
         self.volumeSlider.setValue(100)
         self.volumeSlider.setFixedWidth(120)
+        self.volumeSlider.setToolTip("Volume Slider")
         self.volumeSlider.valueChanged.connect(self.changeVolume)
 
         self.volumeLayout.addWidget(
@@ -230,23 +240,28 @@ class MainUi(object):
 
         # shuffle button + connection
         self.shuffleButton = self.controlButtons(Icons.SHUFFLE)
+        self.shuffleButton.setToolTip("Shuffle")
         self.shuffleButton.clicked.connect(self.toggleShuffle)
 
         # previous button + connection
         self.previousButton = self.controlButtons(Icons.PREVIOUS)
+        self.previousButton.setToolTip("Previous")
         self.previousButton.clicked.connect(self.playPrevious)
 
         self.playPauseButton = self.controlButtons(Icons.PLAY)
         self.playPauseButton.setFixedSize(80, 80)
         self.playPauseButton.setIconSize(QSize(68, 68))
+        self.playPauseButton.setToolTip("Play/Pause")
         self.playPauseButton.clicked.connect(self.controller.togglePlayPause)
 
         # next button + connection
         self.nextButton = self.controlButtons(Icons.NEXT)
+        self.nextButton.setToolTip("Next")
         self.nextButton.clicked.connect(self.playNext)
 
         # loop button + connection
         self.loopButton = self.controlButtons(Icons.LOOP)
+        self.loopButton.setToolTip("Loop")
         self.loopButton.clicked.connect(self.toggleLoop)
 
         self.transportLayout.addWidget(
