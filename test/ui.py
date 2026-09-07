@@ -111,9 +111,6 @@ class MainUi(object):
         # Control Bar
         self.setupControlsBar()
 
-        # Apply initial theme
-        self.applyTheme()
-
     def setupWindow(self):
         if not self.MainWindow.objectName():
             self.MainWindow.setObjectName("MainWindow")
@@ -121,9 +118,9 @@ class MainUi(object):
 
     def setupMainLayout(self):
         self.centralWidget = QWidget()
-        self.centralWidget.setObjectName("centralWidget")
-        # White: #1c1c1c Dark: #121212
-        self.centralWidget.setStyleSheet("QWidget#centralWidget { background-color: #1c1c1c; border: none; }")
+        self.centralWidget.setStyleSheet(
+            "background-color: #1c1c1c"
+        )  # white: #1c1c1c dark: #121212
         self.MainWindow.setCentralWidget(self.centralWidget)
         self.mainLayout = QVBoxLayout(self.centralWidget)
         # Spacing & Margins
@@ -133,8 +130,8 @@ class MainUi(object):
     def setupNavigationBar(self):
         # White: #ecebe4 Dark: #1E1E1E
         self.navFrame = QFrame()
-        self.navFrame.setObjectName("navFrame")
-        self.navFrame.setStyleSheet("""QFrame#navFrame { background-color: #ecebe4; border: none; border-radius: 12px; }""")
+        self.navFrame.setStyleSheet("""background-color: #ecebe4;
+                                    border-radius: 12px;""")
         self.navLayout = QHBoxLayout(self.navFrame)
         self.navLayout.setSpacing(20)
 
@@ -161,7 +158,7 @@ class MainUi(object):
         # ThemeToggle Button
         self.themeToggleBtn = self.navButtons("", Icons.THEME)
         self.themeToggleBtn.setToolTip("Light / Dark")
-        self.themeToggleBtn.clicked.connect(self.toggleTheme)
+        # self.themeToggleBtn.clicked.connect(self.)
         self.navLayout.addWidget(self.themeToggleBtn)
 
         # Settings Button
@@ -177,8 +174,8 @@ class MainUi(object):
     def setupMediaSection(self):
         # White: #ecebe4 Dark: #181818
         self.mediaFrame = QFrame()
-        self.mediaFrame.setObjectName("mediaFrame")
-        self.mediaFrame.setStyleSheet("""QFrame#mediaFrame { background-color: #ecebe4; border: none; border-radius: 12px; }""")
+        self.mediaFrame.setStyleSheet("""background-color: #ecebe4;
+                                      border-radius: 12px;""")
 
         self.mediaLayout = QHBoxLayout(self.mediaFrame)
         self.setupPlayerArea()
@@ -191,7 +188,6 @@ class MainUi(object):
     def setupControlsBar(self):
 
         self.controlsFrame = QFrame()
-        self.controlsFrame.setObjectName("controlsFrame")
         self.controlsLayout = QVBoxLayout(self.controlsFrame)
         self.controlsLayout.setContentsMargins(15, 15, 15, 15)
 
@@ -320,7 +316,8 @@ class MainUi(object):
         self.controlsLayout.addLayout(self.bottomLayout)
 
         # White: #ecebe4 Dark: #1E1E1E
-        self.controlsFrame.setStyleSheet("""QFrame#controlsFrame { background-color: #ecebe4; border: none; border-radius: 12px; }""")
+        self.controlsFrame.setStyleSheet("""background-color: #ecebe4;
+                                         border-radius: 12px;""")
 
         # Initially set to disable
         self.shuffleButton.setEnabled(False)
@@ -375,45 +372,43 @@ class MainUi(object):
             self.volumeButton.setIcon(QIcon(Icons.MUTE))
 
     def SliderStyle(self):
-        colors = self.getThemeColors()
-
-        return f"""
-        QSlider {{
+        return """
+        QSlider {
             min-height: 28px;
             background: transparent;
-        }}
-        QSlider::groove:horizontal {{
+        }
+        QSlider::groove:horizontal {
             height: 6px;
-            background: {colors["slider_bg"]};
-            border: 1px solid {colors["slider_border"]};
+            background: #141414;
+            border: 1px solid #000000;
             border-radius: 3px;
-        }}
-        QSlider::sub-page:horizontal {{
+        }
+        QSlider::sub-page:horizontal {
             background: #FF3344;
-            border: 1px solid #FF3344;
+            border: 1px solid #000000;
             border-radius: 3px;
-        }}
-        QSlider::add-page:horizontal {{
-            background: {colors["slider_bg"]};
-            border: 1px solid {colors["slider_border"]};
+        }
+        QSlider::add-page:horizontal {
+            background: #141414;
+            border: 1px solid #000000;
             border-radius: 3px;
-        }}
-        QSlider::handle:horizontal {{
+        }
+        QSlider::handle:horizontal {
             width: 18px;
             height: 18px;
             margin: -6px 0;
-            background: {colors["slider_handle"]};
+            background: #FFFFFF;
             border: 2px solid #FF3344;
             border-radius: 9px;
-        }}
-        QSlider::handle:horizontal:hover {{
+        }
+        QSlider::handle:horizontal:hover {
             background: #FF3344;
-            border: 2px solid {colors["slider_handle"]};
-        }}
-        QSlider::handle:horizontal:pressed {{
-            background: {colors["slider_pressed"]};
+            border: 2px solid #FFFFFF;
+        }
+        QSlider::handle:horizontal:pressed {
+            background: #000000;
             border: 2px solid #FF3344;
-        }}
+        }
         """
 
     def controlButtons(self, iconPath):
@@ -422,7 +417,9 @@ class MainUi(object):
         Button.setIconSize(QSize(48, 48))
         Button.setFixedSize(64, 64)
         Button.setFlat(True)
-        Button.setStyleSheet("border: none; background: transparent;")
+        Button.setStyleSheet(
+            "border: none; background: transparent; color: white; font-weight: bold;"
+        )
         return Button
 
     def navButtons(self, text, iconPath):
@@ -430,7 +427,9 @@ class MainUi(object):
         Button.setIcon(QIcon(iconPath))
         Button.setIconSize(QSize(48, 48))
         Button.setFlat(True)
-        Button.setStyleSheet("border: none; background: transparent;")
+        Button.setStyleSheet(
+            "border: none; background: transparent; color: white; font-weight: bold;"
+        )
         return Button
 
     def audioOutlineCard(
@@ -466,278 +465,26 @@ class MainUi(object):
         button.setFixedSize(64, 64)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.setCheckable(checkable)
-        button.setStyleSheet(self.audioOutlineButtonStyle())
-        return button
-
-    def audioOutlineButtonStyle(self):
-        colors = self.getThemeColors()
-
-        return f"""
-            QPushButton {{
-                color: {colors["text"]};
-                background-color: {colors["player"]};
+        button.setStyleSheet("""
+            QPushButton {
+                color: #F2F2F2;
+                background-color: #181818;
                 border: 2px solid #FF3344;
                 border-radius: 32px;
                 font-size: 20px;
                 font-weight: bold;
-            }}
-            QPushButton:hover {{
+            }
+            QPushButton:hover {
                 color: #FF3344;
-                border-color: {colors["text"]};
-                background-color: {colors["button_hover"]};
-            }}
-            QPushButton:checked {{
+                border-color: #F2F2F2;
+            }
+            QPushButton:checked {
                 color: #FF3344;
                 border-color: #FF3344;
-                background-color: {colors["checked_bg"]};
-            }}
-        """
-
-    def getThemeColors(self):
-        # Surface colors below follow the light/dark pairs specified in ui.py.
-        if self.isDarkMode:
-            return {
-                "window": "#121212",
-                "nav": "#1E1E1E",
-                "media": "#181818",
-                "controls": "#1E1E1E",
-                "status": "#292929",
-                "player": "#282828",
-                "playlist": "#1E1E1E",
-                "text": "#F2F2F2",
-                "surface": "#262626",
-                "button_hover": "#262626",
-                "playlist_hover": "#2E2222",
-                "checked_bg": "#121212",
-                "border": "#3A3A3A",
-                "divider": "#2A2A2A",
-                "slider_bg": "#141414",
-                "slider_border": "#000000",
-                "slider_handle": "#FFFFFF",
-                "slider_pressed": "#000000",
+                background-color: #121212;
             }
-
-        return {
-            "window": "#1c1c1c",
-            "nav": "#ecebe4",
-            "media": "#ecebe4",
-            "controls": "#ecebe4",
-            "status": "#BCBCB6",
-            "player": "#BCBCB6",
-            "playlist": "#BCBCB6",
-            "text": "#1c1c1c",
-            "surface": "#D8D7D0",
-            "button_hover": "#D8D7D0",
-            "playlist_hover": "#E5E3DA",
-            "checked_bg": "#E6E5DE",
-            "border": "#8F8F8A",
-            "divider": "#C4C3BC",
-            "slider_bg": "#8F8F8A",
-            "slider_border": "#6F6E69",
-            "slider_handle": "#FFFFFF",
-            "slider_pressed": "#1c1c1c",
-        }
-
-    def toggleTheme(self):
-        self.isDarkMode = not self.isDarkMode
-        self.applyTheme()
-
-    def applyTheme(self):
-        colors = self.getThemeColors()
-
-        # Named selectors are intentional: styling generic QFrame/QWidget here
-        # can paint over child widgets and make rounded corners look square.
-        self.centralWidget.setStyleSheet(
-            f"QWidget#centralWidget {{ background-color: {colors['window']}; border: none; }}"
-        )
-        self.navFrame.setStyleSheet(
-            f"QFrame#navFrame {{ background-color: {colors['nav']}; border: none; border-radius: 12px; }}"
-        )
-        self.mediaFrame.setStyleSheet(
-            f"QFrame#mediaFrame {{ background-color: {colors['media']}; border: none; border-radius: 12px; }}"
-        )
-        self.controlsFrame.setStyleSheet(
-            f"QFrame#controlsFrame {{ background-color: {colors['controls']}; border: none; border-radius: 12px; }}"
-        )
-        self.playerFrame.setStyleSheet(
-            f"QFrame#playerFrame {{ background-color: {colors['player']}; border: none; border-radius: 12px; }}"
-        )
-        self.playlistFrame.setStyleSheet(
-            f"QFrame#playlistFrame {{ background-color: {colors['playlist']}; border: none; border-radius: 12px; }}"
-        )
-
-        nav_style = f"""
-            QPushButton {{
-                border: none;
-                background: transparent;
-                color: {colors['text']};
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {colors['button_hover']};
-                border-radius: 10px;
-            }}
-        """
-        for button in (self.appiconBtn, self.openfilesBtn, self.openFolderBtn, self.themeToggleBtn, self.settingsBtn):
-            button.setStyleSheet(nav_style)
-
-        control_style = f"""
-            QPushButton {{
-                border: none;
-                background: transparent;
-                color: {colors['text']};
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {colors['button_hover']};
-                border-radius: 32px;
-            }}
-            QPushButton:disabled {{
-                background: transparent;
-            }}
-        """
-        for button in (self.shuffleButton, self.previousButton, self.playPauseButton, self.nextButton, self.loopButton, self.volumeButton):
-            button.setStyleSheet(control_style)
-
-        self.currentTimeLabel.setStyleSheet(f"color: {colors['text']}; background: transparent;")
-        self.totalTimeLabel.setStyleSheet(f"color: {colors['text']}; background: transparent;")
-
-        self.statusLabel.setStyleSheet(f"""
-            QLabel {{
-                color: {colors['text']};
-                background-color: {colors['status']};
-                border: none;
-                border-radius: 14px;
-                padding: 7px 14px;
-            }}
         """)
-
-        self.positionSlider.setStyleSheet(self.SliderStyle())
-        self.volumeSlider.setStyleSheet(self.SliderStyle())
-
-        self.musicPageFrame.setStyleSheet(f"""
-            QFrame#musicPageFrame {{
-                background-color: transparent;
-                border: 2px solid {colors['border']};
-                border-radius: 28px;
-            }}
-        """)
-        self.albumArtFrame.setStyleSheet("QFrame#albumArtFrame { background: transparent; border: none; }")
-        self.nowPlayingFrame.setStyleSheet("QFrame#nowPlayingFrame { background: transparent; border: none; }")
-
-        self.nowPlayingTitle.setStyleSheet(f"""
-            QLabel {{
-                color: #FF3344;
-                background-color: {colors['surface']};
-                border: 2px solid {colors['text']};
-                border-radius: 18px;
-                font-size: 18px;
-                font-weight: 700;
-                padding: 8px 18px;
-            }}
-        """)
-        self.songNameLabel.setStyleSheet(f"""
-            QLabel {{
-                color: {colors['text']};
-                background-color: {colors['player']};
-                border: 2px solid #FF3344;
-                border-radius: 18px;
-                font-size: 28px;
-                font-weight: 700;
-                padding: 16px 22px;
-            }}
-        """)
-        self.artistInfoLabel.setStyleSheet(f"""
-            QLabel {{
-                color: #FF3344;
-                background-color: {colors['surface']};
-                border: 2px solid {colors['text']};
-                border-radius: 18px;
-                font-size: 15px;
-                font-weight: 700;
-                padding: 6px 18px;
-            }}
-        """)
-
-        outline_style = self.audioOutlineButtonStyle()
-        for button in (self.songButton, self.artistButton1, self.artistButton2):
-            button.setStyleSheet(outline_style)
-
-        self.playlistLabel.setStyleSheet(
-            f"QLabel {{ color: #FF3344; font-weight: 700; letter-spacing: 2px; background: transparent; }}"
-        )
-        self.playlistCountLabel.setStyleSheet(f"""
-            QLabel {{
-                color: {colors['text']};
-                background-color: {colors['surface']};
-                border: 1px solid {colors['border']};
-                border-radius: 11px;
-                padding: 0px 8px;
-                font-size: 12px;
-                font-weight: 600;
-            }}
-        """)
-        self.playlistDivider.setStyleSheet(
-            "background-color: #2A2A2A; max-height: 1px; border: none;"
-        )
-        self.playlistWidget.setStyleSheet(f"""
-          QListWidget {{
-              background-color: transparent;
-              border: none;
-              outline: none;
-              color: {colors['text']};
-              font-family: "Segoe UI";
-              font-size: 13px;
-          }}
-          QListWidget::item {{
-              background-color: {colors['surface']};
-              border-left: 3px solid transparent;
-              border-radius: 10px;
-              padding: 10px 10px 10px 8px;
-              margin: 0px;
-          }}
-          QListWidget::item:hover {{
-              background-color: {colors['playlist_hover']};
-          }}
-          QListWidget::item:selected {{
-              background-color: rgba(255, 51, 68, 30);
-              color: #FF3344;
-              font-weight: 600;
-          }}
-          QListWidget::item:selected:active {{
-              background-color: rgba(255, 51, 68, 30);
-          }}
-          QScrollBar:vertical {{
-              background: transparent;
-              width: 6px;
-              margin: 2px;
-          }}
-          QScrollBar::handle:vertical {{
-              background: {colors['border']};
-              border-radius: 3px;
-              min-height: 30px;
-          }}
-          QScrollBar::handle:vertical:hover {{
-              background: #FF3344;
-          }}
-          QScrollBar::add-line:vertical,
-          QScrollBar::sub-line:vertical {{
-              height: 0px;
-          }}
-        """)
-
-        self.updateHeroImage()
-
-    def updateHeroImage(self):
-        heroPath = Icons.MUSICHERO_DARK if self.isDarkMode else Icons.MUSICHERO_WHITE
-        heroPixmap = QPixmap(heroPath)
-        heroPixmap = heroPixmap.scaled(
-            380,
-            380,
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation,
-        )
-        self.musicIcon.setPixmap(heroPixmap)
+        return button
 
     # Update Icon ---- Section
     def updatePlayPauseIcon(self, state):
@@ -784,14 +531,12 @@ class MainUi(object):
 
         # White: #BCBCB6 Dark: #282828
         self.playerFrame = QFrame()
-        self.playerFrame.setObjectName("playerFrame")
-        self.playerFrame.setStyleSheet("""QFrame#playerFrame { background-color: #BCBCB6; border: none; border-radius: 12px; }""")
+        self.playerFrame.setStyleSheet("""background-color: #BCBCB6;
+                                       border-radius: 12px;""")
         self.playerLayout = QVBoxLayout(self.playerFrame)
 
         # StackedWidget() for multiple pages.
         self.playerStack = QStackedWidget()
-        self.playerStack.setObjectName("playerStack")
-        self.playerStack.setStyleSheet("QStackedWidget#playerStack { background: transparent; border: none; }")
         self.playerLayout.addWidget(self.playerStack)
 
         # Page 1 (Place Holder)
@@ -832,6 +577,14 @@ class MainUi(object):
         self.albumArtLayout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.musicIcon = QLabel()
+        heroPixmap = QPixmap(Icons.MUSICHERO_DARK)
+        heroPixmap = heroPixmap.scaled(
+            380,
+            380,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self.musicIcon.setPixmap(heroPixmap)
         self.musicIcon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.albumArtLayout.addWidget(self.musicIcon)
 

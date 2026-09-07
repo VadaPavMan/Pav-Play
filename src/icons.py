@@ -23,6 +23,7 @@ class Icons:
     SHUFFLE = "assets\\controls\\shuffle.png"
     LOOP = "assets\\controls\\loop.png"
     LOOP_ONE = "assets\\controls\\loop_one.png"
+    LOOP_OFF = "assets\\controls\\loop_off.png"
     
     # Playlist Icons
     MUSIC = "assets\\playlist\\music.png"

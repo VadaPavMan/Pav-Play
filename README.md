@@ -180,3 +180,31 @@ PavPlay/
 # Repo Link:
 
 `https://github.com/VadaPavMan/Pav-Play`
+
+# Dark And Light Mode:
+
+- Dark Mode:
+
+```
+- Window       #121212
+- Navigation   #1E1E1E
+- Player       #282828
+- Playlist     #1E1E1E
+- Controls     #1E1E1E
+- Text         #F2F2F2
+- Accent       #FF3344
+```
+
+- Light Mode:
+
+```
+- Window       #F2F2F2
+- Navigation   #FFFFFF
+- Player       #E6E6E6
+- Playlist     #FFFFFF
+- Controls     #FFFFFF
+- Text         #181818
+- Accent       #FF3344
+```
+
+#767572

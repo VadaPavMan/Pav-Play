@@ -55,6 +55,7 @@ from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from core.formats import Formats
 
+
 class DropArea(QFrame):
     fileSelected = Signal(str)
 
