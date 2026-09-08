@@ -208,3 +208,35 @@ PavPlay/
 ```
 
 #767572
+
+
+Settings Page Structure:
+MainUi
+  │
+  ├── Main Navigation
+  │      ├── Files
+  │      ├── Folder
+  │      ├── Theme
+  │      └── Settings
+  │
+  ├── Main Media Area
+  │      ├── Placeholder
+  │      ├── Video Player
+  │      └── Audio Player
+  │
+  └── Settings Page
+         │
+         ├── Settings Sidebar
+         │      ├── Back
+         │      ├── Audio
+         │      ├── Video
+         │      ├── Core
+         │      ├── Help
+         │      └── About
+         │
+         └── Settings Content
+                ├── Audio Settings Page
+                ├── Video Settings Page
+                ├── Core Settings Page
+                ├── Help Page
+                └── About Page
