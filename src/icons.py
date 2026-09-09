@@ -6,6 +6,7 @@ class Icons:
     FOLDER = "assets\\nav\\folder.png"
     SETTINGS = "assets\\nav\\settings.png"
     THEME = "assets\\nav\\theme.png"
+    BACK = "assets\\nav\\back.png"
     
     # Hero
     MULTIMEDIA = "assets\\hero\\multimedia.png"

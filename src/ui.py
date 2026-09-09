@@ -68,6 +68,8 @@ from controllers.metadata import get_artist
 from icons import Icons
 from core.formats import Formats
 from core.link import Link
+from settings.settings_page import SettingsPage
+from settings.settings_manager import SettingsManager
 
 WIDTH = 1280
 HEIGHT = 720
@@ -93,6 +95,12 @@ class MainUi(object):
 
         # Theme
         self.isDarkMode = True
+
+        # Persistent application settings
+        self.settingsManager = SettingsManager()
+
+        # Settings navigation
+        self._previousPlayerWidget = None
 
         QApplication.setEffectEnabled(Qt.UI_FadeTooltip, True)
 
@@ -172,6 +180,7 @@ class MainUi(object):
         self.navLayout.addStretch()
         self.settingsBtn = self.navButtons("", Icons.SETTINGS)
         self.settingsBtn.setToolTip("Settings")
+        self.settingsBtn.clicked.connect(self.openSettings)
         self.navLayout.addWidget(self.settingsBtn)
 
         # Adding Buttons to layout
@@ -339,6 +348,79 @@ class MainUi(object):
         self.positionSlider.setEnabled(False)
 
         self.mainLayout.addWidget(self.controlsFrame, 2)
+
+        # Apply persisted audio defaults.
+        self.applyAudioSettings()
+
+        # Settings page lives in the same main layout and temporarily replaces
+        # the media + controls area without recreating the player.
+        self.settingsPage = SettingsPage()
+        self.settingsPage.backRequested.connect(self.closeSettings)
+        self.settingsPage.hide()
+        self.mainLayout.addWidget(self.settingsPage, 10)
+
+    def openSettings(self):
+        if self.settingsPage.isVisible():
+            return
+
+        self._previousPlayerWidget = self.playerStack.currentWidget()
+        self.mediaFrame.hide()
+        self.controlsFrame.hide()
+        self.settingsPage.show()
+        self.settingsPage.raise_()
+
+    def closeSettings(self):
+        if not self.settingsPage.isVisible():
+            return
+
+        self.settingsPage.hide()
+        self.mediaFrame.show()
+        self.controlsFrame.show()
+
+        # Apply any Audio settings changed while Settings was open.
+        self.applyAudioSettings()
+
+        if self._previousPlayerWidget is not None:
+            self.playerStack.setCurrentWidget(self._previousPlayerWidget)
+
+    def applyAudioSettings(self):
+        """Apply persisted audio defaults to the current player session."""
+
+        volume = self.settingsManager.get("audio/default_volume")
+        try:
+            volume = int(volume)
+        except (TypeError, ValueError):
+            volume = 100
+        volume = max(0, min(100, volume))
+
+        self.volumeSlider.blockSignals(True)
+        self.volumeSlider.setValue(volume)
+        self.volumeSlider.blockSignals(False)
+        self.controller.audioOutput.setVolume(volume / 100)
+
+        shuffle = self.settingsManager.get("audio/default_shuffle")
+        if isinstance(shuffle, str):
+            shuffle = shuffle.strip().lower() in ("1", "true", "yes", "on")
+        else:
+            shuffle = bool(shuffle)
+        self.shuffleList = shuffle
+
+        loop_mode = self.settingsManager.get("audio/default_loop_mode")
+        try:
+            loop_mode = int(loop_mode)
+        except (TypeError, ValueError):
+            loop_mode = 0
+        self.loopMode = max(0, min(2, loop_mode))
+
+        if self.loopMode == 0:
+            self.loopButton.setIcon(QIcon(Icons.LOOP_OFF))
+            self.loopButton.setToolTip("Loop: Off")
+        elif self.loopMode == 1:
+            self.loopButton.setIcon(QIcon(Icons.LOOP))
+            self.loopButton.setToolTip("Loop: Playlist")
+        else:
+            self.loopButton.setIcon(QIcon(Icons.LOOP_ONE))
+            self.loopButton.setToolTip("Loop: One")
 
     def toggleShuffle(self):
         self.shuffleList = not self.shuffleList
@@ -631,6 +713,9 @@ class MainUi(object):
         self.playlistFrame.setStyleSheet(
             f"QFrame#playlistFrame {{ background-color: {colors['playlist']}; border: none; border-radius: 12px; }}"
         )
+
+        if hasattr(self, "settingsPage"):
+            self.settingsPage.applyTheme(colors)
 
         nav_style = f"""
             QPushButton {{

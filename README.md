@@ -247,3 +247,47 @@ MainUi
 ├── Core Settings Page
 ├── Help Page
 └── About Page
+
+
+SettingsPage
+│
+├── sidebar
+│    ├── backButton
+│    ├── audioButton
+│    ├── videoButton
+│    ├── coreButton
+│    ├── helpButton
+│    └── aboutButton
+│
+└── contentStack
+     ├── AudioSettings
+     ├── VideoSettings
+     ├── CoreSettings
+     ├── HelpPage
+     └── AboutPage
+
+
+| Section      | v1 customization             |
+| ------------ | ---------------------------- |
+| 🎵 **Audio** | Auto Play                    |
+|              | Resume Playback              |
+|              | Remember Position            |
+|              | Default Volume               |
+|              | Remember Volume              |
+|              | Default Loop Mode            |
+|              | Default Shuffle              |
+| 🎬 **Video** | Auto Play                    |
+|              | Resume Playback              |
+|              | Default Window Mode          |
+| ⚙️ **Core**  | Remember Last Media          |
+|              | Remember Last Playlist       |
+|              | Confirm Before Exit          |
+|              | Add Opened Files to Playlist |
+| ❓ **Help**   | Getting Started              |
+|              | Troubleshooting              |
+|              | Documentation                |
+| ℹ️ **About** | Version                      |
+|              | GitHub                       |
+|              | Credits                      |
+|              | License                      |
+
