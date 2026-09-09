@@ -14,3 +14,6 @@ class Formats:
     
     SUPPORTED_FORMATS_SET = {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".aac", ".wma", ".mp4", ".mkv", ".avi", ".mov", ".webm", ".wmv"}
     
+    
+    def setMultiMediaBackend(self):
+        os.environ["QT_MULTIMEDIA_BACKEND"] = "ffmpeg"

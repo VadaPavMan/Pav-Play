@@ -67,9 +67,9 @@ class PlayerController:
         self.mediaPlayer.setAudioOutput(self.audioOutput)
         self.mediaPlayer.setVideoOutput(videoWidget)
         os.environ["QT_MULTIMEDIA_BACKEND"] = "ffmpeg"
-
+        
     # IMP
-    def loadMedia(self, filePath):
+    def loadMedia(self, filePath, auto_play=True):
         extension = os.path.splitext(filePath)[1].lower()
         video_exts = Formats.VIDEOS
         audio_exts = Formats.AUDIOS
@@ -82,7 +82,10 @@ class PlayerController:
             return None
 
         self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
-        self.mediaPlayer.play()
+        if auto_play:
+            self.mediaPlayer.play()
+        else:
+            self.mediaPlayer.pause()
 
         return page
 
@@ -92,13 +95,11 @@ class PlayerController:
     def pause(self):
         self.mediaPlayer.pause()
 
-    def stop(self):
-        self.mediaPlayer.stop()
-
     def togglePlayPause(self):
         if self.mediaPlayer.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             self.mediaPlayer.pause()
         else:
             self.mediaPlayer.play()
 
-        
+    def stop(self):
+        self.mediaPlayer.stop()

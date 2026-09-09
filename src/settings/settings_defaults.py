@@ -15,7 +15,6 @@ DEFAULT_SETTINGS = {
     "audio/default_shuffle": False,
     "video/auto_play": True,
     "video/resume_playback": False,
-    "video/default_window_mode": "windowed",
     "core/remember_last_media": False,
     "core/remember_last_playlist": False,
     "core/confirm_before_exit": False,

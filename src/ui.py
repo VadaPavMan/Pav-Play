@@ -99,6 +99,15 @@ class MainUi(object):
         # Persistent application settings
         self.settingsManager = SettingsManager()
 
+        # Session playback positions used by the Resume Playback setting.
+        self._sessionPositions = {}
+
+        # Resume requests are generation-based so an old media load can never
+        # restore its position into a newly opened file.
+        self._resumeRequestId = 0
+        self._pendingResumeFile = None
+        self._pendingResumePosition = None
+
         # Settings navigation
         self._previousPlayerWidget = None
 
@@ -112,6 +121,21 @@ class MainUi(object):
 
         # Navigation Bar
         self.setupNavigationBar()
+
+        # Main content stack keeps the player and Settings as mutually
+        # exclusive views. This prevents the Settings page from being
+        # painted underneath/alongside the player area.
+        self.contentStack = QStackedWidget()
+        self.contentStack.setObjectName("contentStack")
+        self.contentStack.setStyleSheet(
+            "QStackedWidget#contentStack { background: transparent; border: none; }"
+        )
+        self.playerContent = QWidget()
+        self.playerContentLayout = QVBoxLayout(self.playerContent)
+        self.playerContentLayout.setContentsMargins(0, 0, 0, 0)
+        self.playerContentLayout.setSpacing(10)
+        self.contentStack.addWidget(self.playerContent)
+        self.mainLayout.addWidget(self.contentStack, 10)
 
         # Media Layout
         self.setupMediaSection()
@@ -201,7 +225,7 @@ class MainUi(object):
 
         self.mediaLayout.addWidget(self.playerFrame, 4)
         self.mediaLayout.addWidget(self.playlistFrame, 1)
-        self.mainLayout.addWidget(self.mediaFrame, 8)
+        self.playerContentLayout.addWidget(self.mediaFrame, 8)
 
     def setupControlsBar(self):
 
@@ -347,41 +371,48 @@ class MainUi(object):
         self.loopButton.setEnabled(False)
         self.positionSlider.setEnabled(False)
 
-        self.mainLayout.addWidget(self.controlsFrame, 2)
+        self.playerContentLayout.addWidget(self.controlsFrame, 2)
 
         # Apply persisted audio defaults.
         self.applyAudioSettings()
 
-        # Settings page lives in the same main layout and temporarily replaces
-        # the media + controls area without recreating the player.
+        # Settings is a sibling view of the player content, not another item
+        # below it. The stacked container guarantees only one is visible.
         self.settingsPage = SettingsPage()
         self.settingsPage.backRequested.connect(self.closeSettings)
-        self.settingsPage.hide()
-        self.mainLayout.addWidget(self.settingsPage, 10)
+        self.contentStack.addWidget(self.settingsPage)
 
     def openSettings(self):
-        if self.settingsPage.isVisible():
+        if self.contentStack.currentWidget() is self.settingsPage:
             return
 
         self._previousPlayerWidget = self.playerStack.currentWidget()
-        self.mediaFrame.hide()
-        self.controlsFrame.hide()
-        self.settingsPage.show()
-        self.settingsPage.raise_()
+        self.contentStack.setCurrentWidget(self.settingsPage)
 
     def closeSettings(self):
-        if not self.settingsPage.isVisible():
+        if self.contentStack.currentWidget() is not self.settingsPage:
             return
 
-        self.settingsPage.hide()
-        self.mediaFrame.show()
-        self.controlsFrame.show()
-
-        # Apply any Audio settings changed while Settings was open.
         self.applyAudioSettings()
+        self.contentStack.setCurrentWidget(self.playerContent)
 
-        if self._previousPlayerWidget is not None:
+        # A media file can be opened while Settings is visible. In that case
+        # _previousPlayerWidget still points to the page that was visible when
+        # Settings was opened (usually the dashboard/placeholder), so restoring
+        # it would hide the newly loaded media even though playback is active.
+        # Always prefer the page that matches the currently loaded media.
+        if self.currentFile and os.path.isfile(self.currentFile):
+            extension = os.path.splitext(self.currentFile)[1].lower()
+
+            if extension in Formats.VIDEOS:
+                self.playerStack.setCurrentWidget(self.videoPage)
+            elif extension in Formats.AUDIOS:
+                self.playerStack.setCurrentWidget(self.musicPage)
+            elif self._previousPlayerWidget is not None:
+                self.playerStack.setCurrentWidget(self._previousPlayerWidget)
+        elif self._previousPlayerWidget is not None:
             self.playerStack.setCurrentWidget(self._previousPlayerWidget)
+
 
     def applyAudioSettings(self):
         """Apply persisted audio defaults to the current player session."""
@@ -393,11 +424,30 @@ class MainUi(object):
             volume = 100
         volume = max(0, min(100, volume))
 
+        remember_volume = self.settingsManager.get("audio/remember_volume")
+        if isinstance(remember_volume, str):
+            remember_volume = remember_volume.strip().lower() in ("1", "true", "yes", "on")
+        else:
+            remember_volume = bool(remember_volume)
+
+        if remember_volume:
+            remembered_volume = self.settingsManager.get("audio/remembered_volume")
+            try:
+                if remembered_volume is not None:
+                    volume = int(remembered_volume)
+            except (TypeError, ValueError):
+                pass
+        else:
+            # Avoid bringing back an old remembered value if the user
+            # disables Remember Volume and later enables it again.
+            self.settingsManager.settings.remove("audio/remembered_volume")
+
+        volume = max(0, min(100, volume))
+
         self.volumeSlider.blockSignals(True)
         self.volumeSlider.setValue(volume)
         self.volumeSlider.blockSignals(False)
         self.controller.audioOutput.setVolume(volume / 100)
-
         shuffle = self.settingsManager.get("audio/default_shuffle")
         if isinstance(shuffle, str):
             shuffle = shuffle.strip().lower() in ("1", "true", "yes", "on")
@@ -421,6 +471,7 @@ class MainUi(object):
         else:
             self.loopButton.setIcon(QIcon(Icons.LOOP_ONE))
             self.loopButton.setToolTip("Loop: One")
+
 
     def toggleShuffle(self):
         self.shuffleList = not self.shuffleList
@@ -449,6 +500,16 @@ class MainUi(object):
     def changeVolume(self, value):
         volume = value / 100
         self.controller.audioOutput.setVolume(volume)
+        # Remember Volume stores the user's actual slider level, not the
+        # muted state. The value is restored on the next application start.
+        remember_volume = self.settingsManager.get("audio/remember_volume")
+        if isinstance(remember_volume, str):
+            remember_volume = remember_volume.strip().lower() in ("1", "true", "yes", "on")
+        else:
+            remember_volume = bool(remember_volume)
+
+        if remember_volume:
+            self.settingsManager.set("audio/remembered_volume", int(value))
 
         if self.controller.audioOutput.isMuted():
             self.controller.audioOutput.setMuted(False)
@@ -933,10 +994,18 @@ class MainUi(object):
         self.positionSlider.blockSignals(False)
 
         self.currentTimeLabel.setText(formatTime(position))
+        # Do not let the backend's initial 0 ms position overwrite the saved
+        # resume point while the new media is still becoming seekable.
+        if self.currentFile and self._pendingResumeFile != self.currentFile:
+            self._sessionPositions[self.currentFile] = position
 
     def updateDuration(self, duration):
         self.positionSlider.setRange(0, duration)
         self.totalTimeLabel.setText(formatTime(duration))
+        # Duration can arrive before the backend is actually seekable. The
+        # resume helper therefore checks both duration and seekability and also
+        # retries briefly from mediaStatusChanged.
+        self.restorePendingResumePosition()
 
     def seekPosition(self, position):
         self.controller.mediaPlayer.setPosition(position)
@@ -1112,8 +1181,18 @@ class MainUi(object):
         self.playMedia(file_path)
 
     def mediaStatusChanged(self, status):
+        if status in (
+            QMediaPlayer.MediaStatus.LoadedMedia,
+            QMediaPlayer.MediaStatus.BufferedMedia,
+        ):
+            self.restorePendingResumePosition()
+            return
+
         if status != QMediaPlayer.MediaStatus.EndOfMedia:
             return
+
+        self._pendingResumeFile = None
+        self._pendingResumePosition = None
 
         if self.loopMode == 2:
             self.controller.mediaPlayer.setPosition(0)
@@ -1130,9 +1209,38 @@ class MainUi(object):
 
         if self.currentIndex < self.playlistWidget.count() - 1:
             self.playNext()
-
         else:
             self.controller.stop()
+
+    def restorePendingResumePosition(self, request_id=None, attempts=40):
+        """Restore a pending position only after the current media is seekable."""
+        pending_file = self._pendingResumeFile
+        pending_position = self._pendingResumePosition
+
+        if pending_file is None or pending_position is None:
+            return
+
+        if request_id is not None and request_id != self._resumeRequestId:
+            return
+
+        if pending_file != self.currentFile:
+            return
+
+        player = self.controller.mediaPlayer
+        duration = player.duration()
+
+        # QMediaPlayer may report duration before it reports that the stream
+        # can actually seek. Never call setPosition until both are valid.
+        if duration > 0 and player.isSeekable() and 0 < pending_position < duration:
+            player.setPosition(int(pending_position))
+            self._pendingResumeFile = None
+            self._pendingResumePosition = None
+            return
+
+        if attempts > 0:
+            QTimer.singleShot(50, lambda rid=self._resumeRequestId: self.restorePendingResumePosition(
+                request_id=rid, attempts=attempts - 1
+            ))
 
     def setupPlaceholderPage(self):
         self.placeHolder = QWidget()
@@ -1167,12 +1275,13 @@ class MainUi(object):
         if not os.path.isfile(filePath):
             return
 
-        # Add selected files to playlist
+        # Add selected file and make it the active media. This also fixes the
+        # case where the playlist already contains another item: importing a
+        # video should immediately display that video in the player area.
         item = self.addPlaylistItem(filePath)
-        if self.currentIndex == -1:
-            self.currentIndex = self.playlistWidget.row(item)
-            self.playlistWidget.setCurrentItem(item)
-            self.playMedia(filePath)
+        self.currentIndex = self.playlistWidget.row(item)
+        self.playlistWidget.setCurrentItem(item)
+        self.playMedia(filePath)
 
     # will you it later
     def addFilesToPlaylist(self, file_paths):
@@ -1182,7 +1291,65 @@ class MainUi(object):
     def playMedia(self, filePath):
         self.currentFile = filePath
         self.file_name = os.path.basename(filePath)
-        page = self.controller.loadMedia(filePath)
+
+        # Every media open creates a new resume request. This prevents an
+        # asynchronous load of the previous file from affecting the new file.
+        self._resumeRequestId += 1
+        self._pendingResumeFile = None
+        self._pendingResumePosition = None
+        request_id = self._resumeRequestId
+
+        extension = os.path.splitext(filePath)[1].lower()
+        audio_exts = Formats.AUDIOS
+        video_exts = Formats.VIDEOS
+
+        if extension in audio_exts:
+            resume = self.settingsManager.get("audio/resume_playback")
+        elif extension in video_exts:
+            resume = self.settingsManager.get("video/resume_playback")
+        else:
+            resume = False
+
+        if isinstance(resume, str):
+            resume = resume.strip().lower() in ("1", "true", "yes", "on")
+        else:
+            resume = bool(resume)
+
+        if resume and filePath in self._sessionPositions:
+            saved_position = int(self._sessionPositions[filePath])
+            if saved_position > 0:
+                self._pendingResumeFile = filePath
+                self._pendingResumePosition = saved_position
+
+        # Auto Play is controlled independently for audio and video.
+        auto_play = True
+        if extension in audio_exts:
+            auto_play = self.settingsManager.get("audio/auto_play")
+            if isinstance(auto_play, str):
+                auto_play = auto_play.strip().lower() in ("1", "true", "yes", "on")
+            else:
+                auto_play = bool(auto_play)
+        elif extension in video_exts:
+            auto_play = self.settingsManager.get("video/auto_play")
+            if isinstance(auto_play, str):
+                auto_play = auto_play.strip().lower() in ("1", "true", "yes", "on")
+            else:
+                auto_play = bool(auto_play)
+
+        # Switch the player area BEFORE loading/starting the media. This avoids
+        # a race where QMediaPlayer starts playback while the placeholder page
+        # is still visible.
+        if extension in video_exts:
+            self.playerStack.setCurrentWidget(self.videoPage)
+        elif extension in audio_exts:
+            self.playerStack.setCurrentWidget(self.musicPage)
+        else:
+            QMessageBox.warning(
+                self.MainWindow, "Unsupported", "Unsupported media format."
+            )
+            return
+
+        page = self.controller.loadMedia(filePath, auto_play=auto_play)
 
         if page == "video":
             self.playerStack.setCurrentWidget(self.videoPage)
@@ -1196,9 +1363,7 @@ class MainUi(object):
             if hasattr(self, "artistInfoLabel"):
                 self.artistInfoLabel.setText(f"Author Name: {artist}")
         else:
-            QMessageBox.warning(
-                self.MainWindow, "Unsupported", "Unsupported media format."
-            )
+            return
 
         self.statusLabel.setText(f"Playing: {self.file_name}")
 
@@ -1208,6 +1373,15 @@ class MainUi(object):
         self.nextButton.setEnabled(True)
         self.loopButton.setEnabled(True)
         self.positionSlider.setEnabled(True)
+
+        # Start resume asynchronously. This gives QMediaPlayer time to expose
+        # a real duration/seekable state, which is important for MKV and other
+        # formats whose duration is reported after the source is set.
+        if self._pendingResumeFile == filePath:
+            self.restorePendingResumePosition(request_id=request_id, attempts=40)
+
+    def controllerTogglePlayPause(self):
+        self.controller.togglePlayPause()
 
     def setupPlaylistArea(self):
         # Playlist Section
@@ -1496,8 +1670,19 @@ class MainUi(object):
             Formats.ALL_MEDIA_IMPORT,
         )
 
-        for file_path in file_paths:
-            self.onFileSelected(file_path)
+        if not file_paths:
+            return
+
+        first_item = None
+        for index, file_path in enumerate(file_paths):
+            item = self.addPlaylistItem(file_path)
+            if index == 0:
+                first_item = item
+
+        if first_item is not None:
+            self.currentIndex = self.playlistWidget.row(first_item)
+            self.playlistWidget.setCurrentItem(first_item)
+            self.playMedia(first_item.data(Qt.ItemDataRole.UserRole))
 
     def openFolder(self):
         folder_path = QFileDialog.getExistingDirectory(
@@ -1520,5 +1705,16 @@ class MainUi(object):
             if extension in Formats.SUPPORTED_FORMATS_SET:
                 media_files.append(file_path)
 
-        for file_path in media_files:
-            self.onFileSelected(file_path)
+        if not media_files:
+            return
+
+        first_item = None
+        for index, file_path in enumerate(media_files):
+            item = self.addPlaylistItem(file_path)
+            if index == 0:
+                first_item = item
+
+        if first_item is not None:
+            self.currentIndex = self.playlistWidget.row(first_item)
+            self.playlistWidget.setCurrentItem(first_item)
+            self.playMedia(first_item.data(Qt.ItemDataRole.UserRole))
