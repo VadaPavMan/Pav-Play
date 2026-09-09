@@ -12,9 +12,17 @@ The goal of this project is to create a clean desktop media player capable of pl
 
 ## Screenshots:
 
-![preview1](screenshots/preview1.png)
-![preview2](screenshots/preview2.png)
-![preview3](screenshots/preview3.png)
+**_Dashboard Page Dark And Light Mode:_**
+![dashboardDark](screenshots/dashboardDark.png)
+![dashboardLight](screenshots/dashboardLight.png)
+
+**_Audio Page Dark And Light Mode:_**
+![audioPageDark](screenshots/audioPageDark.png)
+![audioPageLight](screenshots/audioPageLight.png)
+
+**_Video Page Dark And Light Mode:_**
+![videoPageDark](screenshots/videoPageDark.png)
+![videoPageLight](screenshots/videoPageLight.png)
 
 ## ✨ Current Features
 
@@ -209,34 +217,33 @@ PavPlay/
 
 #767572
 
-
 Settings Page Structure:
 MainUi
-  │
-  ├── Main Navigation
-  │      ├── Files
-  │      ├── Folder
-  │      ├── Theme
-  │      └── Settings
-  │
-  ├── Main Media Area
-  │      ├── Placeholder
-  │      ├── Video Player
-  │      └── Audio Player
-  │
-  └── Settings Page
-         │
-         ├── Settings Sidebar
-         │      ├── Back
-         │      ├── Audio
-         │      ├── Video
-         │      ├── Core
-         │      ├── Help
-         │      └── About
-         │
-         └── Settings Content
-                ├── Audio Settings Page
-                ├── Video Settings Page
-                ├── Core Settings Page
-                ├── Help Page
-                └── About Page
+│
+├── Main Navigation
+│ ├── Files
+│ ├── Folder
+│ ├── Theme
+│ └── Settings
+│
+├── Main Media Area
+│ ├── Placeholder
+│ ├── Video Player
+│ └── Audio Player
+│
+└── Settings Page
+│
+├── Settings Sidebar
+│ ├── Back
+│ ├── Audio
+│ ├── Video
+│ ├── Core
+│ ├── Help
+│ └── About
+│
+└── Settings Content
+├── Audio Settings Page
+├── Video Settings Page
+├── Core Settings Page
+├── Help Page
+└── About Page
