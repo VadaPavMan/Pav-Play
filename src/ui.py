@@ -1,7 +1,6 @@
 import sys
 import os
 import random
-import time
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
@@ -13,6 +12,8 @@ from PySide6.QtCore import (
     QUrl,
     QTime,
     QTimer,
+    QPropertyAnimation,
+    QEasingCurve,
     Property,
     QCoreApplication,
     QMetaObject,
@@ -58,6 +59,7 @@ from PySide6.QtWidgets import (
     QSpacerItem,
     QToolButton,
     QGraphicsDropShadowEffect,
+    QGraphicsOpacityEffect,
 )
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
@@ -376,8 +378,6 @@ class MainUi(object):
         # Apply persisted audio defaults.
         self.applyAudioSettings()
 
-        # Settings is a sibling view of the player content, not another item
-        # below it. The stacked container guarantees only one is visible.
         self.settingsPage = SettingsPage()
         self.settingsPage.backRequested.connect(self.closeSettings)
         self.contentStack.addWidget(self.settingsPage)
@@ -396,11 +396,6 @@ class MainUi(object):
         self.applyAudioSettings()
         self.contentStack.setCurrentWidget(self.playerContent)
 
-        # A media file can be opened while Settings is visible. In that case
-        # _previousPlayerWidget still points to the page that was visible when
-        # Settings was opened (usually the dashboard/placeholder), so restoring
-        # it would hide the newly loaded media even though playback is active.
-        # Always prefer the page that matches the currently loaded media.
         if self.currentFile and os.path.isfile(self.currentFile):
             extension = os.path.splitext(self.currentFile)[1].lower()
 
@@ -412,7 +407,6 @@ class MainUi(object):
                 self.playerStack.setCurrentWidget(self._previousPlayerWidget)
         elif self._previousPlayerWidget is not None:
             self.playerStack.setCurrentWidget(self._previousPlayerWidget)
-
 
     def applyAudioSettings(self):
         """Apply persisted audio defaults to the current player session."""
@@ -426,7 +420,12 @@ class MainUi(object):
 
         remember_volume = self.settingsManager.get("audio/remember_volume")
         if isinstance(remember_volume, str):
-            remember_volume = remember_volume.strip().lower() in ("1", "true", "yes", "on")
+            remember_volume = remember_volume.strip().lower() in (
+                "1",
+                "true",
+                "yes",
+                "on",
+            )
         else:
             remember_volume = bool(remember_volume)
 
@@ -472,7 +471,6 @@ class MainUi(object):
             self.loopButton.setIcon(QIcon(Icons.LOOP_ONE))
             self.loopButton.setToolTip("Loop: One")
 
-
     def toggleShuffle(self):
         self.shuffleList = not self.shuffleList
 
@@ -500,11 +498,14 @@ class MainUi(object):
     def changeVolume(self, value):
         volume = value / 100
         self.controller.audioOutput.setVolume(volume)
-        # Remember Volume stores the user's actual slider level, not the
-        # muted state. The value is restored on the next application start.
         remember_volume = self.settingsManager.get("audio/remember_volume")
         if isinstance(remember_volume, str):
-            remember_volume = remember_volume.strip().lower() in ("1", "true", "yes", "on")
+            remember_volume = remember_volume.strip().lower() in (
+                "1",
+                "true",
+                "yes",
+                "on",
+            )
         else:
             remember_volume = bool(remember_volume)
 
@@ -689,66 +690,62 @@ class MainUi(object):
             "slider_pressed": "#1c1c1c",
         }
 
-    def _interpolateColor(self, start, end, progress):
-        start = start.lstrip("#")
-        end = end.lstrip("#")
-        sr, sg, sb = int(start[0:2], 16), int(start[2:4], 16), int(start[4:6], 16)
-        er, eg, eb = int(end[0:2], 16), int(end[2:4], 16), int(end[4:6], 16)
-        r = round(sr + (er - sr) * progress)
-        g = round(sg + (eg - sg) * progress)
-        b = round(sb + (eb - sb) * progress)
-        return f"#{r:02X}{g:02X}{b:02X}"
+    def _finishThemeTransition(self):
+        animation = getattr(self, "_themeAnimation", None)
+        if animation is not None:
+            animation.deleteLater()
 
-    def _animateTheme(self):
-        if not hasattr(self, "_themeStartColors"):
-            return
+        overlay = getattr(self, "_themeOverlay", None)
+        if overlay is not None:
+            overlay.hide()
+            overlay.deleteLater()
 
-        elapsed = time.monotonic() - self._themeAnimationStart
-        progress = min(elapsed / 0.5, 1.0)
-
-        # Smooth ease-in-out instead of a linear jump.
-        progress = progress * progress * (3.0 - 2.0 * progress)
-
-        animatedColors = {}
-        for key, startColor in self._themeStartColors.items():
-            targetColor = self._themeTargetColors[key]
-            animatedColors[key] = self._interpolateColor(
-                startColor, targetColor, progress
-            )
-
-        # Only theme-dependent widgets are restyled. The audio cards/buttons
-        # intentionally remain untouched and keep their original colors.
-        self.applyTheme(animatedColors, updateHero=False, animationFrame=True)
-
-        if elapsed >= 0.5:
-            self._themeTimer.stop()
-            self.isDarkMode = self._themeTargetIsDark
-            self.applyTheme()
-            self.themeToggleBtn.setEnabled(True)
+        self._themeAnimation = None
+        self._themeOverlay = None
+        self.themeToggleBtn.setEnabled(True)
 
     def toggleTheme(self):
-        # Smoothly interpolate the theme colors over exactly 0.5 seconds.
-        # There is no opacity/fade effect on the application window.
-        if hasattr(self, "_themeTimer") and self._themeTimer.isActive():
+        if (
+            hasattr(self, "_themeAnimation")
+            and self._themeAnimation is not None
+            and self._themeAnimation.state() == QPropertyAnimation.State.Running
+        ):
             return
 
         self.themeToggleBtn.setEnabled(False)
 
-        self._themeStartColors = self.getThemeColors()
-        self._themeTargetIsDark = not self.isDarkMode
+        # Capture the current appearance before changing the theme.
+        oldPixmap = self.centralWidget.grab()
 
-        # Get the target palette without changing the active theme yet.
-        self.isDarkMode = self._themeTargetIsDark
-        self._themeTargetColors = self.getThemeColors()
-        self.isDarkMode = not self._themeTargetIsDark
+        # Apply the target theme exactly once.
+        self.isDarkMode = not self.isDarkMode
+        self.applyTheme()
 
-        self._themeAnimationStart = time.monotonic()
+        # Put the old appearance above the newly themed UI.
+        overlay = QLabel(self.centralWidget)
+        overlay.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        overlay.setGeometry(self.centralWidget.rect())
+        overlay.setPixmap(oldPixmap)
+        overlay.setScaledContents(False)
 
-        if not hasattr(self, "_themeTimer"):
-            self._themeTimer = QTimer()
-            self._themeTimer.timeout.connect(self._animateTheme)
+        opacityEffect = QGraphicsOpacityEffect(overlay)
+        opacityEffect.setOpacity(1.0)
+        overlay.setGraphicsEffect(opacityEffect)
+        overlay.show()
+        overlay.raise_()
 
-        self._themeTimer.start(25)
+        self._themeOverlay = overlay
+        self._themeAnimation = QPropertyAnimation(
+            targetObject=opacityEffect,
+            propertyName=b"opacity",
+            parent=self.centralWidget,
+        )
+        self._themeAnimation.setDuration(400)
+        self._themeAnimation.setStartValue(1.0)
+        self._themeAnimation.setEndValue(0.0)
+        self._themeAnimation.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        self._themeAnimation.finished.connect(self._finishThemeTransition)
+        self._themeAnimation.start()
 
     def applyTheme(self, colors=None, updateHero=True, animationFrame=False):
         if colors is None:
@@ -1238,9 +1235,12 @@ class MainUi(object):
             return
 
         if attempts > 0:
-            QTimer.singleShot(50, lambda rid=self._resumeRequestId: self.restorePendingResumePosition(
-                request_id=rid, attempts=attempts - 1
-            ))
+            QTimer.singleShot(
+                50,
+                lambda rid=self._resumeRequestId: self.restorePendingResumePosition(
+                    request_id=rid, attempts=attempts - 1
+                ),
+            )
 
     def setupPlaceholderPage(self):
         self.placeHolder = QWidget()
