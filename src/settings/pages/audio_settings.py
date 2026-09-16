@@ -1,14 +1,20 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QFormLayout, QFrame, QHBoxLayout,
-    QLabel, QSlider, QVBoxLayout, QWidget,
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QSlider,
+    QVBoxLayout,
+    QWidget,
 )
 
 from ..settings_manager import SettingsManager
 
 
 class AudioSettingsPage(QWidget):
-    """Audio playback settings."""
 
     def __init__(self):
         super().__init__()
@@ -122,9 +128,7 @@ class AudioSettingsPage(QWidget):
     def _createCheckBox(self, text, key):
         checkbox = QCheckBox(text)
         checkbox.setCursor(Qt.CursorShape.PointingHandCursor)
-        checkbox.toggled.connect(
-            lambda checked, k=key: self.settings.set(k, checked)
-        )
+        checkbox.toggled.connect(lambda checked, k=key: self.settings.set(k, checked))
         return checkbox
 
     @staticmethod
@@ -188,13 +192,13 @@ class AudioSettingsPage(QWidget):
         media = colors["media"]
         hover = colors["button_hover"]
 
-        self.setStyleSheet(f'''
+        self.setStyleSheet(f"""
             QWidget#audioSettingsPage {{
                 background: transparent;
                 border: none;
             }}
             QLabel#settingsPageTitle {{
-                color: {text};
+                color: #FF3344;
                 font-size: 28px;
                 font-weight: 700;
                 background: transparent;
@@ -207,7 +211,7 @@ class AudioSettingsPage(QWidget):
             QFrame#audioSettingsSection {{
                 background-color: {media};
                 border: 1px solid {border};
-                border-radius: 12px;
+                border-radius: 18px;
             }}
             QLabel#settingsSectionTitle {{
                 color: {text};
@@ -268,4 +272,4 @@ class AudioSettingsPage(QWidget):
                 selection-background-color: #FF3344;
                 selection-color: white;
             }}
-        ''')
+        """)

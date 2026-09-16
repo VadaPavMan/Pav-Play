@@ -48,11 +48,13 @@ class HelpPage(QWidget):
         scrollArea.setObjectName("helpScrollArea")
         scrollArea.setWidgetResizable(True)
         scrollArea.setFrameShape(QFrame.Shape.NoFrame)
+        scrollArea.viewport().setStyleSheet("background: transparent; border: none;")
 
         content = QWidget()
         contentLayout = QVBoxLayout(content)
-        contentLayout.setContentsMargins(0, 4, 6, 4)
+        contentLayout.setContentsMargins(10, 10, 10, 10)
         contentLayout.setSpacing(12)
+        content.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
         self.howToUseSection = self._createExpandableSection(
             "How To Use Pav Play",
@@ -86,8 +88,6 @@ class HelpPage(QWidget):
         headerButton.setText(titleText)
         headerButton.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         headerButton.setArrowType(Qt.ArrowType.RightArrow)
-        headerButton.setCheckable(True)
-        headerButton.setChecked(False)
         headerButton.setCursor(Qt.CursorShape.PointingHandCursor)
         headerButton.setSizePolicy(
             QSizePolicy.Policy.Expanding,
@@ -110,12 +110,16 @@ class HelpPage(QWidget):
         section._headerButton = headerButton
         section._contentFrame = contentFrame
 
-        headerButton.toggled.connect(
-            lambda checked, s=section: self._setSectionExpanded(s, checked)
+        headerButton.clicked.connect(
+            lambda checked=False, s=section: self._toggleSection(s)
         )
 
         self._sections.append(section)
         return section
+
+    def _toggleSection(self, section):
+        expanded = not section._contentFrame.isVisible()
+        self._setSectionExpanded(section, expanded)
 
     def _setSectionExpanded(self, section, expanded):
         section._contentFrame.setVisible(expanded)
@@ -241,6 +245,7 @@ class HelpPage(QWidget):
             Icons.GITHUB,
             self.GITHUB_ISSUES_URL,
         )
+        githubButton.setStyleSheet(self.setButtonStyle())
         layout.addWidget(githubButton)
 
         self.emailButton = self._createLinkButton(
@@ -248,7 +253,7 @@ class HelpPage(QWidget):
             Icons.EMAIL,
             "mailto:" + self.DEVELOPER_EMAIL,
         )
-
+        self.emailButton.setStyleSheet(self.setButtonStyle())
         self.emailButton.clicked.connect(self.openEmail)
         layout.addWidget(self.emailButton)
 
@@ -260,6 +265,26 @@ class HelpPage(QWidget):
         layout.addWidget(contactInfo)
 
         return widget
+
+    def setButtonStyle(self):
+        return """
+            QPushButton#helpLinkButton{
+                color: black;
+                background-color: "#ecebe4";
+                border: 2px solid black;
+                border-radius: 18px;
+                font-size: 14px;
+                font-weight: bold;
+                text-align: left;
+                padding: 8px 14px;
+            }
+            
+            QPushButton#helpLinkButton:hover {
+                color: #FF3344;
+                background-color: "#121212";
+                border-color: #FF3344;
+            }
+        """
 
     def openEmail(self):
         QDesktopServices.openUrl(
@@ -289,7 +314,7 @@ class HelpPage(QWidget):
             }}
 
             QLabel#helpTitle {{
-                color: {colors["text"]};
+                color: #FF3344;
                 background: transparent;
                 font-size: 26px;
                 font-weight: 700;
@@ -309,14 +334,14 @@ class HelpPage(QWidget):
             QFrame#helpSection {{
                 background-color: {colors["surface"]};
                 border: 1px solid {colors["border"]};
-                border-radius: 12px;
+                border-radius: 18px;
             }}
 
             QToolButton#helpSectionHeader {{
                 color: {colors["text"]};
                 background: transparent;
                 border: none;
-                border-radius: 10px;
+                border-radius: 18px;
                 padding: 0px 14px;
                 font-size: 16px;
                 font-weight: bold;
@@ -332,6 +357,7 @@ class HelpPage(QWidget):
                 background: transparent;
                 border: none;
                 border-top: 1px solid black;
+                margin: 20px;
             }}
 
             QLabel#helpBlockHeading {{
@@ -353,22 +379,5 @@ class HelpPage(QWidget):
                 background: transparent;
                 font-weight: bold;
                 font-size: 13px;
-            }}
-
-            QPushButton#helpLinkButton {{
-                color: black;
-                background-color: "#ecebe4";
-                border: 2px solid black;
-                border-radius: 10px;
-                font-size: 14px;
-                font-weight: bold;
-                text-align: left;
-                padding: 8px 14px;
-            }}
-
-            QPushButton#helpLinkButton:hover {{
-                color: #FF3344;
-                background-color: "#121212";
-                border-color: #FF3344;
             }}
             """)

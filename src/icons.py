@@ -1,5 +1,5 @@
 class Icons:
-    
+
     # Nav Bar Icons
     APPICON = "assets\\nav\\appicon.png"
     FILES = "assets\\nav\\files.png"
@@ -7,14 +7,22 @@ class Icons:
     SETTINGS = "assets\\nav\\settings.png"
     THEME = "assets\\nav\\theme.png"
     BACK = "assets\\nav\\back.png"
-    GITHUB = "assets\\nav\\github.png"
-    EMAIL = "assets\\nav\\email.png"
-    
+
+    # Credits
+    EUCALYP = "assets\\credits\\eucalyp.jpg"
+    MITIABULAITI = "assets\\credits\\mitiabulaiti.png"
+    MUHAMMADALI = "assets\\credits\\muhammad-ali.jpg"
+    STORYSET = "assets\\credits\\storyset.png"
+    XNIMRODX = "assets\\credits\\xnimrodx.jpg"
+    VADAPAVMAN = "assets\\credits\\vadapavman.png"
+    GITHUB = "assets\\credits\\github.png"
+    EMAIL = "assets\\credits\\email.png"
+
     # Hero
     MULTIMEDIA = "assets\\hero\\multimedia.png"
     MUSICHERO = "assets\\hero\\musicHero.png"
     MUSICHERO_G = "assets\\hero\\musicHeroG.png"
-    
+
     # Controls Icons
     PLAY = "assets\\controls\\play.png"
     PAUSE = "assets\\controls\\pause.png"
@@ -26,7 +34,7 @@ class Icons:
     LOOP = "assets\\controls\\loop.png"
     LOOP_ONE = "assets\\controls\\loop_one.png"
     LOOP_OFF = "assets\\controls\\loop_off.png"
-    
+
     # Playlist Icons
     MUSIC = "assets\\playlist\\music.png"
     VIDEO = "assets\\playlist\\video.png"

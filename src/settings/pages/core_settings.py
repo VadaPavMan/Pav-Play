@@ -75,9 +75,7 @@ class CoreSettingsPage(QWidget):
     def _createCheckBox(self, text, key):
         checkbox = QCheckBox(text)
         checkbox.setCursor(Qt.CursorShape.PointingHandCursor)
-        checkbox.toggled.connect(
-            lambda checked, k=key: self.settings.set(k, checked)
-        )
+        checkbox.toggled.connect(lambda checked, k=key: self.settings.set(k, checked))
         return checkbox
 
     @staticmethod
@@ -108,13 +106,13 @@ class CoreSettingsPage(QWidget):
         border = colors["border"]
         media = colors["media"]
 
-        self.setStyleSheet(f'''
+        self.setStyleSheet(f"""
             QWidget#coreSettingsPage {{
                 background: transparent;
                 border: none;
             }}
             QLabel#settingsPageTitle {{
-                color: {text};
+                color: #FF3344;
                 font-size: 28px;
                 font-weight: 700;
                 background: transparent;
@@ -127,7 +125,7 @@ class CoreSettingsPage(QWidget):
             QFrame#coreSettingsSection {{
                 background-color: {media};
                 border: 1px solid {border};
-                border-radius: 12px;
+                border-radius: 18px;
             }}
             QLabel#settingsSectionTitle {{
                 color: {text};
@@ -155,4 +153,4 @@ class CoreSettingsPage(QWidget):
                 background-color: #FF3344;
                 border-color: #FF3344;
             }}
-        ''')
+        """)

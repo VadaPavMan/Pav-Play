@@ -94,7 +94,7 @@ class VideoSettingsPage(QWidget):
                 border: none;
             }}
             QLabel#settingsPageTitle {{
-                color: {text};
+                color: #FF3344;
                 font-size: 28px;
                 font-weight: 700;
                 background: transparent;
@@ -107,7 +107,7 @@ class VideoSettingsPage(QWidget):
             QFrame#videoSettingsSection {{
                 background-color: {media};
                 border: 1px solid {border};
-                border-radius: 12px;
+                border-radius: 18px;
             }}
             QLabel#settingsSectionTitle {{
                 color: {text};
