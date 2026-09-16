@@ -7,6 +7,8 @@ class Icons:
     SETTINGS = "assets\\nav\\settings.png"
     THEME = "assets\\nav\\theme.png"
     BACK = "assets\\nav\\back.png"
+    GITHUB = "assets\\nav\\github.png"
+    EMAIL = "assets\\nav\\email.png"
     
     # Hero
     MULTIMEDIA = "assets\\hero\\multimedia.png"
