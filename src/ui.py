@@ -147,6 +147,7 @@ class MainUi(object):
 
         # Apply initial theme
         self.applyTheme()
+        self.restoreSavedState()
 
     def setupWindow(self):
         if not self.MainWindow.objectName():
@@ -378,6 +379,8 @@ class MainUi(object):
         # Apply persisted audio defaults.
         self.applyAudioSettings()
 
+        # Settings is a sibling view of the player content, not another item
+        # below it. The stacked container guarantees only one is visible.
         self.settingsPage = SettingsPage()
         self.settingsPage.backRequested.connect(self.closeSettings)
         self.contentStack.addWidget(self.settingsPage)
@@ -396,6 +399,11 @@ class MainUi(object):
         self.applyAudioSettings()
         self.contentStack.setCurrentWidget(self.playerContent)
 
+        # A media file can be opened while Settings is visible. In that case
+        # _previousPlayerWidget still points to the page that was visible when
+        # Settings was opened (usually the dashboard/placeholder), so restoring
+        # it would hide the newly loaded media even though playback is active.
+        # Always prefer the page that matches the currently loaded media.
         if self.currentFile and os.path.isfile(self.currentFile):
             extension = os.path.splitext(self.currentFile)[1].lower()
 
@@ -498,6 +506,8 @@ class MainUi(object):
     def changeVolume(self, value):
         volume = value / 100
         self.controller.audioOutput.setVolume(volume)
+        # Remember Volume stores the user's actual slider level, not the
+        # muted state. The value is restored on the next application start.
         remember_volume = self.settingsManager.get("audio/remember_volume")
         if isinstance(remember_volume, str):
             remember_volume = remember_volume.strip().lower() in (
@@ -691,6 +701,7 @@ class MainUi(object):
         }
 
     def _finishThemeTransition(self):
+        """Clean up the temporary old-theme overlay after the transition."""
         animation = getattr(self, "_themeAnimation", None)
         if animation is not None:
             animation.deleteLater()
@@ -705,6 +716,16 @@ class MainUi(object):
         self.themeToggleBtn.setEnabled(True)
 
     def toggleTheme(self):
+        """Switch themes with a lightweight cross-fade of the old UI.
+
+        Re-applying large QSS blocks every few milliseconds was causing the
+        previous color-interpolation animation to repeatedly trigger Qt style
+        recalculation and repainting. That made the transition visibly laggy.
+
+        Instead, the new theme is applied once and the old appearance is shown
+        temporarily as a transparent overlay. Fading that single pixmap is
+        much cheaper and keeps the transition smooth without fading the window.
+        """
         if (
             hasattr(self, "_themeAnimation")
             and self._themeAnimation is not None
@@ -736,8 +757,8 @@ class MainUi(object):
 
         self._themeOverlay = overlay
         self._themeAnimation = QPropertyAnimation(
-            targetObject=opacityEffect,
-            propertyName=b"opacity",
+            opacityEffect,
+            b"opacity",
             parent=self.centralWidget,
         )
         self._themeAnimation.setDuration(400)
@@ -1275,9 +1296,14 @@ class MainUi(object):
         if not os.path.isfile(filePath):
             return
 
-        # Add selected file and make it the active media. This also fixes the
-        # case where the playlist already contains another item: importing a
-        # video should immediately display that video in the player area.
+        add_to_playlist = self._toBool(
+            self.settingsManager.get("core/add_opened_files_to_playlist")
+        )
+
+        if not add_to_playlist:
+            self.playMedia(filePath)
+            return
+
         item = self.addPlaylistItem(filePath)
         self.currentIndex = self.playlistWidget.row(item)
         self.playlistWidget.setCurrentItem(item)
@@ -1291,6 +1317,11 @@ class MainUi(object):
     def playMedia(self, filePath):
         self.currentFile = filePath
         self.file_name = os.path.basename(filePath)
+
+        if self._toBool(self.settingsManager.get("core/remember_last_media")):
+            self.settingsManager.set("core/saved_last_media", filePath)
+        else:
+            self.settingsManager.settings.remove("core/saved_last_media")
 
         # Every media open creates a new resume request. This prevents an
         # asynchronous load of the previous file from affecting the new file.
@@ -1379,6 +1410,116 @@ class MainUi(object):
         # formats whose duration is reported after the source is set.
         if self._pendingResumeFile == filePath:
             self.restorePendingResumePosition(request_id=request_id, attempts=40)
+
+    @staticmethod
+    def _toBool(value):
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() in ("1", "true", "yes", "on")
+        return bool(value)
+
+    def savePlaylistState(self):
+        """Persist the current playlist when Remember Last Playlist is enabled."""
+        if not hasattr(self, "playlistWidget"):
+            return
+
+        remember_playlist = self._toBool(
+            self.settingsManager.get("core/remember_last_playlist")
+        )
+
+        if not remember_playlist:
+            self.settingsManager.settings.remove("core/saved_playlist")
+            return
+
+        playlist_paths = []
+        for index in range(self.playlistWidget.count()):
+            item = self.playlistWidget.item(index)
+            file_path = item.data(Qt.ItemDataRole.UserRole)
+            if file_path and os.path.isfile(file_path):
+                playlist_paths.append(file_path)
+
+        self.settingsManager.set("core/saved_playlist", playlist_paths)
+
+    def saveApplicationState(self):
+        """Persist final Core state before the main window closes."""
+        self.savePlaylistState()
+
+        remember_media = self._toBool(
+            self.settingsManager.get("core/remember_last_media")
+        )
+
+        if remember_media and self.currentFile and os.path.isfile(self.currentFile):
+            self.settingsManager.set("core/saved_last_media", self.currentFile)
+        else:
+            self.settingsManager.settings.remove("core/saved_last_media")
+
+    def restoreSavedState(self):
+        """Restore playlist/media state saved by the Core settings."""
+        remember_playlist = self._toBool(
+            self.settingsManager.get("core/remember_last_playlist")
+        )
+
+        if remember_playlist:
+            saved_playlist = self.settingsManager.get("core/saved_playlist")
+
+            if isinstance(saved_playlist, str):
+                saved_playlist = [saved_playlist]
+
+            if isinstance(saved_playlist, (list, tuple)):
+                for file_path in saved_playlist:
+                    if (
+                        isinstance(file_path, str)
+                        and os.path.isfile(file_path)
+                        and os.path.splitext(file_path)[1].lower()
+                        in Formats.SUPPORTED_FORMATS_SET
+                    ):
+                        self.addPlaylistItem(file_path)
+        else:
+            self.settingsManager.settings.remove("core/saved_playlist")
+
+        remember_media = self._toBool(
+            self.settingsManager.get("core/remember_last_media")
+        )
+
+        if not remember_media:
+            self.settingsManager.settings.remove("core/saved_last_media")
+            return
+
+        last_media = self.settingsManager.get("core/saved_last_media")
+        if not isinstance(last_media, str) or not os.path.isfile(last_media):
+            self.settingsManager.settings.remove("core/saved_last_media")
+            return
+
+        for index in range(self.playlistWidget.count()):
+            item = self.playlistWidget.item(index)
+            if item.data(Qt.ItemDataRole.UserRole) == last_media:
+                self.currentIndex = index
+                self.playlistWidget.setCurrentItem(item)
+                break
+
+        # playMedia applies the normal per-media Auto Play setting.
+        self.playMedia(last_media)
+
+    def handleCloseEvent(self, event):
+        """Confirm exit when requested, then persist Core state."""
+        confirm = self._toBool(self.settingsManager.get("core/confirm_before_exit"))
+
+        if confirm:
+            result = QMessageBox.question(
+                self.MainWindow,
+                "Exit Pav Play",
+                "Are you sure you want to exit Pav Play?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+
+            if result != QMessageBox.StandardButton.Yes:
+                event.ignore()
+                return
+
+        self.saveApplicationState()
+        event.accept()
 
     def controllerTogglePlayPause(self):
         self.controller.togglePlayPause()
@@ -1571,6 +1712,7 @@ class MainUi(object):
             self.currentIndex -= 1
 
         self.playlistCountLabel.setText(str(self.playlistWidget.count()))
+        self.savePlaylistState()
 
     def clearPlaylist(self):
 
@@ -1594,6 +1736,7 @@ class MainUi(object):
         self.totalTimeLabel.setText("0:00")
 
         self.statusLabel.setText("Ready")
+        self.savePlaylistState()
 
     def addPlaylistItem(self, file_path):
         # Check Duplicates
@@ -1613,6 +1756,7 @@ class MainUi(object):
         self.playlistWidget.addItem(item)
 
         self.playlistCountLabel.setText(str(self.playlistWidget.count()))
+        self.savePlaylistState()
 
         return item
 
@@ -1673,6 +1817,14 @@ class MainUi(object):
         if not file_paths:
             return
 
+        add_to_playlist = self._toBool(
+            self.settingsManager.get("core/add_opened_files_to_playlist")
+        )
+
+        if not add_to_playlist:
+            self.playMedia(file_paths[0])
+            return
+
         first_item = None
         for index, file_path in enumerate(file_paths):
             item = self.addPlaylistItem(file_path)
@@ -1706,6 +1858,14 @@ class MainUi(object):
                 media_files.append(file_path)
 
         if not media_files:
+            return
+
+        add_to_playlist = self._toBool(
+            self.settingsManager.get("core/add_opened_files_to_playlist")
+        )
+
+        if not add_to_playlist:
+            self.playMedia(media_files[0])
             return
 
         first_item = None

@@ -19,6 +19,9 @@ class MainWindow(QMainWindow):
         self.ui.setup(self)
         self.setWindowTitle("Pav Play")
 
+    def closeEvent(self, event):
+        self.ui.handleCloseEvent(event)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
