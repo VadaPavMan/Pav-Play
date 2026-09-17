@@ -87,6 +87,11 @@ class MainUi(object):
         # shuffle for random play back
         self.shuffleList = False
 
+        # Shuffle playback state. The order is kept separate from the visible
+        # playlist so enabling shuffle never changes the playlist itself.
+        self._shuffleOrder = []
+        self._shuffleHistory = []
+
         """
         loop modes
         - 0 loop off
@@ -109,6 +114,7 @@ class MainUi(object):
         self._resumeRequestId = 0
         self._pendingResumeFile = None
         self._pendingResumePosition = None
+        self._mediaLoadInProgress = False
 
         # Settings navigation
         self._previousPlayerWidget = None
@@ -481,6 +487,7 @@ class MainUi(object):
 
     def toggleShuffle(self):
         self.shuffleList = not self.shuffleList
+        self._resetShuffleState()
 
         if self.shuffleList:
             self.statusLabel.setText("Shuffle: On")
@@ -1053,6 +1060,12 @@ class MainUi(object):
         self.videoPage = QWidget()
         self.videoLayout = QVBoxLayout(self.videoPage)
         self.videoWidget = QVideoWidget()
+        self.videoWidget.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+        self.videoWidget.setStyleSheet("background-color: #000000; border: none;")
+        self.videoWidget.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
         self.videoLayout.addWidget(self.videoWidget)
         self.playerStack.addWidget(self.videoPage)
 
@@ -1175,28 +1188,65 @@ class MainUi(object):
         self.controller.mediaPlayer.durationChanged.connect(self.updateDuration)
 
         self.controller.mediaPlayer.mediaStatusChanged.connect(self.mediaStatusChanged)
+        self.controller.mediaPlayer.errorOccurred.connect(self.mediaErrorOccurred)
 
         self.playerStack.setCurrentIndex(0)
 
-    def playRandom(self):
+    def _resetShuffleState(self):
+
+        self._shuffleOrder = []
+        self._shuffleHistory = []
+
+        if not getattr(self, "shuffleList", False):
+            return
+
         count = self.playlistWidget.count()
-
-        if count == 0:
+        if count <= 1:
             return
 
-        if count == 1:
-            return
-
-        availableIndexes = [
-            index for index in range(count) if index != self.currentIndex
+        self._shuffleOrder = [
+            index
+            for index in range(count)
+            if index != self.currentIndex
         ]
+        random.shuffle(self._shuffleOrder)
 
-        self.currentIndex = random.choice(availableIndexes)
+    def _nextShuffleIndex(self):
+        if self.playlistWidget.count() == 0:
+            return None
+
+        if self.playlistWidget.count() == 1:
+            if self.loopMode == 1 and self.currentIndex == 0:
+                return 0
+            return None
+
+        if not self._shuffleOrder:
+            if self.loopMode != 1:
+                return None
+            self._resetShuffleState()
+
+        if not self._shuffleOrder:
+            return None
+
+        return self._shuffleOrder.pop(0)
+
+    def playRandom(self):
+        next_index = self._nextShuffleIndex()
+        if next_index is None:
+            return False
+
+        if self.currentIndex >= 0 and self.currentIndex != next_index:
+            self._shuffleHistory.append(self.currentIndex)
+
+        self.currentIndex = next_index
         item = self.playlistWidget.item(self.currentIndex)
-        self.playlistWidget.setCurrentItem(item)
+        if item is None:
+            return False
 
+        self.playlistWidget.setCurrentItem(item)
         file_path = item.data(Qt.ItemDataRole.UserRole)
         self.playMedia(file_path)
+        return True
 
     def mediaStatusChanged(self, status):
         if status in (
@@ -1212,13 +1262,22 @@ class MainUi(object):
         self._pendingResumeFile = None
         self._pendingResumePosition = None
 
+        if (
+            self.playlistWidget.count() == 0
+            or self.currentIndex < 0
+            or self.currentIndex >= self.playlistWidget.count()
+        ):
+            self.controller.stop()
+            return
+
         if self.loopMode == 2:
             self.controller.mediaPlayer.setPosition(0)
             self.controller.mediaPlayer.play()
             return
 
         if self.shuffleList:
-            self.playRandom()
+            if not self.playRandom():
+                self.controller.stop()
             return
 
         if self.loopMode == 1:
@@ -1230,8 +1289,17 @@ class MainUi(object):
         else:
             self.controller.stop()
 
+    def mediaErrorOccurred(self, error, errorString):
+        if error == QMediaPlayer.Error.NoError:
+            return
+
+        self._mediaLoadInProgress = False
+        message = errorString.strip() if errorString else "Unable to play this media."
+        self.statusLabel.setText(f"Playback error: {message}")
+        self.playPauseButton.setIcon(QIcon(Icons.PLAY))
+
     def restorePendingResumePosition(self, request_id=None, attempts=40):
-        """Restore a pending position only after the current media is seekable."""
+
         pending_file = self._pendingResumeFile
         pending_position = self._pendingResumePosition
 
@@ -1247,8 +1315,6 @@ class MainUi(object):
         player = self.controller.mediaPlayer
         duration = player.duration()
 
-        # QMediaPlayer may report duration before it reports that the stream
-        # can actually seek. Never call setPosition until both are valid.
         if duration > 0 and player.isSeekable() and 0 < pending_position < duration:
             player.setPosition(int(pending_position))
             self._pendingResumeFile = None
@@ -1286,14 +1352,44 @@ class MainUi(object):
         # Drop Media
         self.dropArea = DropArea()
         self.dropArea.fileSelected.connect(self.onFileSelected)
+        self.dropArea.filesSelected.connect(self.onFilesSelected)
         self.placeHolderLayout.addWidget(self.dropArea)
         self.playerStack.addWidget(self.placeHolder)
 
     # File Selection + Sets Page According to Media Format...
     def onFileSelected(self, filePath):
-        print("Selected:", filePath)
+        if not filePath:
+            return
 
-        if not os.path.isfile(filePath):
+        self.onFilesSelected([filePath])
+
+    def onFilesSelected(self, file_paths):
+        if not file_paths:
+            return
+
+        valid_paths = []
+        seen = set()
+
+        for file_path in file_paths:
+            if not isinstance(file_path, str):
+                continue
+
+            file_path = os.path.abspath(file_path)
+
+            if not os.path.isfile(file_path):
+                continue
+
+            extension = os.path.splitext(file_path)[1].lower()
+            if extension not in Formats.SUPPORTED_FORMATS_SET:
+                continue
+
+            if file_path in seen:
+                continue
+
+            seen.add(file_path)
+            valid_paths.append(file_path)
+
+        if not valid_paths:
             return
 
         add_to_playlist = self._toBool(
@@ -1301,34 +1397,60 @@ class MainUi(object):
         )
 
         if not add_to_playlist:
-            self.playMedia(filePath)
+            self.playMedia(valid_paths[0])
             return
 
-        item = self.addPlaylistItem(filePath)
-        self.currentIndex = self.playlistWidget.row(item)
-        self.playlistWidget.setCurrentItem(item)
-        self.playMedia(filePath)
+        first_item = None
 
-    # will you it later
+        for file_path in valid_paths:
+            item = self.addPlaylistItem(file_path)
+
+            if first_item is None:
+                first_item = item
+
+        if first_item is not None:
+            self.currentIndex = self.playlistWidget.row(first_item)
+            self.playlistWidget.setCurrentItem(first_item)
+            self.playMedia(first_item.data(Qt.ItemDataRole.UserRole))
+
     def addFilesToPlaylist(self, file_paths):
-        for files in file_paths:
-            self.addPlaylistItem(files)
+        self.onFilesSelected(file_paths)
+
+    def _getSupportedMediaFiles(self, folder_path):
+        media_files = []
+
+        try:
+            file_names = sorted(os.listdir(folder_path))
+        except OSError:
+            return media_files
+
+        for file_name in file_names:
+            file_path = os.path.join(folder_path, file_name)
+
+            if not os.path.isfile(file_path):
+                continue
+
+            extension = os.path.splitext(file_name)[1].lower()
+
+            if extension in Formats.SUPPORTED_FORMATS_SET:
+                media_files.append(file_path)
+
+        return media_files
 
     def playMedia(self, filePath):
+        if not filePath or not os.path.isfile(filePath):
+            return
+
         self.currentFile = filePath
         self.file_name = os.path.basename(filePath)
+        self._mediaLoadInProgress = True
 
-        if self._toBool(self.settingsManager.get("core/remember_last_media")):
-            self.settingsManager.set("core/saved_last_media", filePath)
-        else:
-            self.settingsManager.settings.remove("core/saved_last_media")
-
-        # Every media open creates a new resume request. This prevents an
-        # asynchronous load of the previous file from affecting the new file.
-        self._resumeRequestId += 1
-        self._pendingResumeFile = None
-        self._pendingResumePosition = None
-        request_id = self._resumeRequestId
+        self.positionSlider.blockSignals(True)
+        self.positionSlider.setRange(0, 0)
+        self.positionSlider.setValue(0)
+        self.positionSlider.blockSignals(False)
+        self.currentTimeLabel.setText(formatTime(0))
+        self.totalTimeLabel.setText(formatTime(0))
 
         extension = os.path.splitext(filePath)[1].lower()
         audio_exts = Formats.AUDIOS
@@ -1336,10 +1458,18 @@ class MainUi(object):
 
         if extension in audio_exts:
             resume = self.settingsManager.get("audio/resume_playback")
+            self.playerStack.setCurrentWidget(self.musicPage)
+            self.songNameLabel.setText(self.file_name)
+            self.artistInfoLabel.setText(f"Author Name: {get_artist(filePath)}")
         elif extension in video_exts:
             resume = self.settingsManager.get("video/resume_playback")
+            self.playerStack.setCurrentWidget(self.videoPage)
         else:
-            resume = False
+            self._mediaLoadInProgress = False
+            QMessageBox.warning(
+                self.MainWindow, "Unsupported", "Unsupported media format."
+            )
+            return
 
         if isinstance(resume, str):
             resume = resume.strip().lower() in ("1", "true", "yes", "on")
@@ -1353,32 +1483,23 @@ class MainUi(object):
                 self._pendingResumePosition = saved_position
 
         # Auto Play is controlled independently for audio and video.
-        auto_play = True
         if extension in audio_exts:
             auto_play = self.settingsManager.get("audio/auto_play")
-            if isinstance(auto_play, str):
-                auto_play = auto_play.strip().lower() in ("1", "true", "yes", "on")
-            else:
-                auto_play = bool(auto_play)
-        elif extension in video_exts:
-            auto_play = self.settingsManager.get("video/auto_play")
-            if isinstance(auto_play, str):
-                auto_play = auto_play.strip().lower() in ("1", "true", "yes", "on")
-            else:
-                auto_play = bool(auto_play)
-
-        # Switch the player area BEFORE loading/starting the media. This avoids
-        # a race where QMediaPlayer starts playback while the placeholder page
-        # is still visible.
-        if extension in video_exts:
-            self.playerStack.setCurrentWidget(self.videoPage)
-        elif extension in audio_exts:
-            self.playerStack.setCurrentWidget(self.musicPage)
         else:
-            QMessageBox.warning(
-                self.MainWindow, "Unsupported", "Unsupported media format."
-            )
-            return
+            auto_play = self.settingsManager.get("video/auto_play")
+
+        if isinstance(auto_play, str):
+            auto_play = auto_play.strip().lower() in ("1", "true", "yes", "on")
+        else:
+            auto_play = bool(auto_play)
+
+        if self._toBool(self.settingsManager.get("core/remember_last_media")):
+            self.settingsManager.set("core/saved_last_media", filePath)
+        else:
+            self.settingsManager.settings.remove("core/saved_last_media")
+
+        self._resumeRequestId += 1
+        request_id = self._resumeRequestId
 
         page = self.controller.loadMedia(filePath, auto_play=auto_play)
 
@@ -1386,17 +1507,27 @@ class MainUi(object):
             self.playerStack.setCurrentWidget(self.videoPage)
         elif page == "audio":
             self.playerStack.setCurrentWidget(self.musicPage)
-            if hasattr(self, "songNameLabel"):
-                self.songNameLabel.setText(self.file_name)
-
-            artist = get_artist(filePath)
-
-            if hasattr(self, "artistInfoLabel"):
-                self.artistInfoLabel.setText(f"Author Name: {artist}")
         else:
+            self._mediaLoadInProgress = False
             return
 
-        self.statusLabel.setText(f"Playing: {self.file_name}")
+        playlist_index = -1
+        for index in range(self.playlistWidget.count()):
+            item = self.playlistWidget.item(index)
+            if item.data(Qt.ItemDataRole.UserRole) == filePath:
+                playlist_index = index
+                break
+
+        if playlist_index >= 0:
+            self.currentIndex = playlist_index
+            self.playlistWidget.setCurrentItem(
+                self.playlistWidget.item(playlist_index)
+            )
+        else:
+            self.currentIndex = -1
+            self.playlistWidget.clearSelection()
+
+        self.statusLabel.setText(f"Loading: {self.file_name}")
 
         self.shuffleButton.setEnabled(True)
         self.previousButton.setEnabled(True)
@@ -1405,11 +1536,10 @@ class MainUi(object):
         self.loopButton.setEnabled(True)
         self.positionSlider.setEnabled(True)
 
-        # Start resume asynchronously. This gives QMediaPlayer time to expose
-        # a real duration/seekable state, which is important for MKV and other
-        # formats whose duration is reported after the source is set.
         if self._pendingResumeFile == filePath:
             self.restorePendingResumePosition(request_id=request_id, attempts=40)
+
+        self._mediaLoadInProgress = False
 
     @staticmethod
     def _toBool(value):
@@ -1711,7 +1841,13 @@ class MainUi(object):
         if row < self.currentIndex:
             self.currentIndex -= 1
 
+        if 0 <= self.currentIndex < self.playlistWidget.count():
+            self.playlistWidget.setCurrentItem(
+                self.playlistWidget.item(self.currentIndex)
+            )
+
         self.playlistCountLabel.setText(str(self.playlistWidget.count()))
+        self._resetShuffleState()
         self.savePlaylistState()
 
     def clearPlaylist(self):
@@ -1723,6 +1859,7 @@ class MainUi(object):
 
         self.currentIndex = -1
         self.currentFile = None
+        self._resetShuffleState()
 
         self.playerStack.setCurrentIndex(0)
 
@@ -1763,7 +1900,11 @@ class MainUi(object):
     def playPlaylistItem(self, item):
         self.currentIndex = self.playlistWidget.row(item)
 
+        if self.shuffleList:
+            self._resetShuffleState()
+
         file_path = item.data(Qt.ItemDataRole.UserRole)
+        self.playlistWidget.setCurrentItem(item)
         self.playMedia(file_path)
         print("Selected playlist file:", file_path)
 
@@ -1772,7 +1913,9 @@ class MainUi(object):
             return
 
         if self.shuffleList:
-            self.playRandom()
+            if not self.playRandom():
+                if self.loopMode != 1:
+                    self.controller.stop()
             return
 
         if self.currentIndex < self.playlistWidget.count() - 1:
@@ -1792,6 +1935,21 @@ class MainUi(object):
 
     def playPrevious(self):
         if self.playlistWidget.count() == 0:
+            return
+
+        if self.shuffleList and self._shuffleHistory:
+            previous_index = self._shuffleHistory.pop()
+            if previous_index < 0 or previous_index >= self.playlistWidget.count():
+                return
+
+            if self.currentIndex >= 0 and self.currentIndex != previous_index:
+                self._shuffleOrder.insert(0, self.currentIndex)
+
+            self.currentIndex = previous_index
+            item = self.playlistWidget.item(self.currentIndex)
+            self.playlistWidget.setCurrentItem(item)
+            file_path = item.data(Qt.ItemDataRole.UserRole)
+            self.playMedia(file_path)
             return
 
         if self.currentIndex > 0:
@@ -1817,24 +1975,7 @@ class MainUi(object):
         if not file_paths:
             return
 
-        add_to_playlist = self._toBool(
-            self.settingsManager.get("core/add_opened_files_to_playlist")
-        )
-
-        if not add_to_playlist:
-            self.playMedia(file_paths[0])
-            return
-
-        first_item = None
-        for index, file_path in enumerate(file_paths):
-            item = self.addPlaylistItem(file_path)
-            if index == 0:
-                first_item = item
-
-        if first_item is not None:
-            self.currentIndex = self.playlistWidget.row(first_item)
-            self.playlistWidget.setCurrentItem(first_item)
-            self.playMedia(first_item.data(Qt.ItemDataRole.UserRole))
+        self.onFilesSelected(file_paths)
 
     def openFolder(self):
         folder_path = QFileDialog.getExistingDirectory(
@@ -1844,37 +1985,9 @@ class MainUi(object):
         if not folder_path:
             return
 
-        media_files = []
-
-        for file_name in os.listdir(folder_path):
-            file_path = os.path.join(folder_path, file_name)
-
-            if not os.path.isfile(file_path):
-                continue
-
-            extension = os.path.splitext(file_name)[1].lower()
-
-            if extension in Formats.SUPPORTED_FORMATS_SET:
-                media_files.append(file_path)
+        media_files = self._getSupportedMediaFiles(folder_path)
 
         if not media_files:
             return
 
-        add_to_playlist = self._toBool(
-            self.settingsManager.get("core/add_opened_files_to_playlist")
-        )
-
-        if not add_to_playlist:
-            self.playMedia(media_files[0])
-            return
-
-        first_item = None
-        for index, file_path in enumerate(media_files):
-            item = self.addPlaylistItem(file_path)
-            if index == 0:
-                first_item = item
-
-        if first_item is not None:
-            self.currentIndex = self.playlistWidget.row(first_item)
-            self.playlistWidget.setCurrentItem(first_item)
-            self.playMedia(first_item.data(Qt.ItemDataRole.UserRole))
+        self.onFilesSelected(media_files)

@@ -81,6 +81,7 @@ class PlayerController:
         else:
             return None
 
+        self.mediaPlayer.stop()
         self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
         if auto_play:
             self.mediaPlayer.play()

@@ -215,79 +215,33 @@ PavPlay/
 - Accent       #FF3344
 ```
 
-#767572
-
-Settings Page Structure:
-MainUi
-│
-├── Main Navigation
-│ ├── Files
-│ ├── Folder
-│ ├── Theme
-│ └── Settings
-│
-├── Main Media Area
-│ ├── Placeholder
-│ ├── Video Player
-│ └── Audio Player
-│
-└── Settings Page
-│
-├── Settings Sidebar
-│ ├── Back
-│ ├── Audio
-│ ├── Video
-│ ├── Core
-│ ├── Help
-│ └── About
-│
-└── Settings Content
-├── Audio Settings Page
-├── Video Settings Page
-├── Core Settings Page
-├── Help Page
-└── About Page
 
 
-SettingsPage
-│
-├── sidebar
-│    ├── backButton
-│    ├── audioButton
-│    ├── videoButton
-│    ├── coreButton
-│    ├── helpButton
-│    └── aboutButton
-│
-└── contentStack
-     ├── AudioSettings
-     ├── VideoSettings
-     ├── CoreSettings
-     ├── HelpPage
-     └── AboutPage
+PHASE 1
+├── Playlist behavior
+├── Next / Previous
+├── Shuffle
+├── Loop
+└── Current-item synchronization
 
+PHASE 2
+├── Media opening
+├── Folder loading
+├── Drag & Drop
+└── Core-setting integration
 
-| Section      | v1 customization             |
-| ------------ | ---------------------------- |
-| 🎵 **Audio** | Auto Play                    |
-|              | Resume Playback              |
-|              | Remember Position            |
-|              | Default Volume               |
-|              | Remember Volume              |
-|              | Default Loop Mode            |
-|              | Default Shuffle              |
-| 🎬 **Video** | Auto Play                    |
-|              | Resume Playback              |
-|              | Default Window Mode          |
-| ⚙️ **Core**  | Remember Last Media          |
-|              | Remember Last Playlist       |
-|              | Confirm Before Exit          |
-|              | Add Opened Files to Playlist |
-| ❓ **Help**   | Getting Started              |
-|              | Troubleshooting              |
-|              | Documentation                |
-| ℹ️ **About** | Version                      |
-|              | GitHub                       |
-|              | Credits                      |
-|              | License                      |
+PHASE 3
+├── Audio player polish
+├── Video player polish
+└── Media switching
 
+PHASE 4
+├── Error handling
+├── Keyboard shortcuts
+└── Edge-case testing
+
+PHASE 5
+└── v1 stabilization
+
+PHASE 6
+└── Architecture refactor

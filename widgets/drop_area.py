@@ -58,6 +58,7 @@ from core.formats import Formats
 
 class DropArea(QFrame):
     fileSelected = Signal(str)
+    filesSelected = Signal(list)
 
     def __init__(self):
         super().__init__()
@@ -140,14 +141,32 @@ class DropArea(QFrame):
     def dropEvent(self, event: QDropEvent):
         urls = event.mimeData().urls()
         if not urls:
+            event.ignore()
             return
+
+        media_files = []
 
         for url in urls:
             file_path = url.toLocalFile()
 
             if os.path.isfile(file_path):
-                self.fileSelected.emit(file_path)
-                print(file_path)
+                extension = os.path.splitext(file_path)[1].lower()
+                if extension in Formats.SUPPORTED_FORMATS_SET:
+                    media_files.append(file_path)
+
+            elif os.path.isdir(file_path):
+                for file_name in sorted(os.listdir(file_path)):
+                    child_path = os.path.join(file_path, file_name)
+
+                    if not os.path.isfile(child_path):
+                        continue
+
+                    extension = os.path.splitext(file_name)[1].lower()
+                    if extension in Formats.SUPPORTED_FORMATS_SET:
+                        media_files.append(child_path)
+
+        if media_files:
+            self.filesSelected.emit(media_files)
 
         event.acceptProposedAction()
 
@@ -160,7 +179,7 @@ class DropArea(QFrame):
                 Formats.ALL_MEDIA_IMPORT,
             )
 
-            for file_path in file_paths:
-                self.fileSelected.emit(file_path)
+            if file_paths:
+                self.filesSelected.emit(file_paths)
         else:
             super().mousePressEvent(event)
