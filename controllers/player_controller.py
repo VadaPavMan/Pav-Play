@@ -66,21 +66,26 @@ class PlayerController:
         self.audioOutput = QAudioOutput()
         self.mediaPlayer.setAudioOutput(self.audioOutput)
         self.mediaPlayer.setVideoOutput(videoWidget)
-        os.environ["QT_MULTIMEDIA_BACKEND"] = "ffmpeg"
-        
     # IMP
     def loadMedia(self, filePath, auto_play=True):
-        extension = os.path.splitext(filePath)[1].lower()
-        video_exts = Formats.VIDEOS
-        audio_exts = Formats.AUDIOS
+        if not isinstance(filePath, str) or not filePath:
+            return None
 
-        if extension in video_exts:
+        filePath = os.path.abspath(filePath)
+        extension = os.path.splitext(filePath)[1].lower()
+
+        if not os.path.isfile(filePath):
+            return None
+
+        if extension in Formats.VIDEOS:
             page = "video"
-        elif extension in audio_exts:
+        elif extension in Formats.AUDIOS:
             page = "audio"
         else:
             return None
 
+        # Validate before touching the current source so an invalid request
+        # cannot interrupt a healthy media session.
         self.mediaPlayer.stop()
         self.mediaPlayer.setSource(QUrl.fromLocalFile(filePath))
         if auto_play:

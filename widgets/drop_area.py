@@ -1,58 +1,8 @@
-import sys
 import os
-import random
-from PySide6.QtCore import (
-    QSize,
-    Qt,
-    QUrl,
-    QTime,
-    QPropertyAnimation,
-    QEasingCurve,
-    Property,
-    QCoreApplication,
-    QMetaObject,
-    QRect,
-    Signal,
-    QObject,
-)
-from PySide6.QtGui import (
-    QAction,
-    QIcon,
-    QPixmap,
-    QFont,
-    QKeyEvent,
-    QDragEnterEvent,
-    QDropEvent,
-    QColor,
-    QPalette,
-)
-from PySide6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QListWidget,
-    QListWidgetItem,
-    QSplitter,
-    QPushButton,
-    QSlider,
-    QLabel,
-    QFileDialog,
-    QMessageBox,
-    QStatusBar,
-    QToolBar,
-    QStackedWidget,
-    QSizePolicy,
-    QMenu,
-    QMenuBar,
-    QFrame,
-    QToolTip,
-    QSpacerItem,
-    QToolButton,
-)
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
-from PySide6.QtMultimediaWidgets import QVideoWidget
+
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QDragEnterEvent, QDropEvent
+from PySide6.QtWidgets import QFileDialog, QFrame, QHBoxLayout, QLabel, QVBoxLayout
 from core.formats import Formats
 
 
@@ -132,8 +82,54 @@ class DropArea(QFrame):
             """ QFrame { background: #1E1E1E; border: 2px solid; border-radius: 18px; } QFrame#formatCard { background: #303030; border: 2px solid; border-radius: 14px; } QLabel { color: white; background: transparent; border: none; font-weight: bold; } """
         )
 
+    def _collectMediaFiles(self, urls):
+        media_files = []
+        seen = set()
+
+        for url in urls:
+            file_path = url.toLocalFile()
+            if not file_path:
+                continue
+
+            file_path = os.path.abspath(file_path)
+
+            if os.path.isfile(file_path):
+                candidates = [file_path]
+            elif os.path.isdir(file_path):
+                try:
+                    names = sorted(os.listdir(file_path))
+                except OSError:
+                    continue
+
+                candidates = [os.path.join(file_path, name) for name in names]
+            else:
+                continue
+
+            for candidate in candidates:
+                if not os.path.isfile(candidate):
+                    continue
+
+                extension = os.path.splitext(candidate)[1].lower()
+                if extension not in Formats.SUPPORTED_FORMATS_SET:
+                    continue
+
+                candidate = os.path.abspath(candidate)
+                if candidate in seen:
+                    continue
+
+                seen.add(candidate)
+                media_files.append(candidate)
+
+        return media_files
+
     def dragEnterEvent(self, event: QDragEnterEvent):
-        if event.mimeData().hasUrls():
+        if not event.mimeData().hasUrls():
+            event.ignore()
+            return
+
+        has_local_url = any(bool(url.toLocalFile()) for url in event.mimeData().urls())
+
+        if has_local_url:
             event.acceptProposedAction()
         else:
             event.ignore()
@@ -144,42 +140,28 @@ class DropArea(QFrame):
             event.ignore()
             return
 
-        media_files = []
+        media_files = self._collectMediaFiles(urls)
 
-        for url in urls:
-            file_path = url.toLocalFile()
+        if not media_files:
+            event.ignore()
+            return
 
-            if os.path.isfile(file_path):
-                extension = os.path.splitext(file_path)[1].lower()
-                if extension in Formats.SUPPORTED_FORMATS_SET:
-                    media_files.append(file_path)
-
-            elif os.path.isdir(file_path):
-                for file_name in sorted(os.listdir(file_path)):
-                    child_path = os.path.join(file_path, file_name)
-
-                    if not os.path.isfile(child_path):
-                        continue
-
-                    extension = os.path.splitext(file_name)[1].lower()
-                    if extension in Formats.SUPPORTED_FORMATS_SET:
-                        media_files.append(child_path)
-
-        if media_files:
-            self.filesSelected.emit(media_files)
-
+        self.filesSelected.emit(media_files)
         event.acceptProposedAction()
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            file_paths, _ = QFileDialog.getOpenFileNames(
-                self,
-                "Open Media File",
-                "",
-                Formats.ALL_MEDIA_IMPORT,
-            )
-
-            if file_paths:
-                self.filesSelected.emit(file_paths)
-        else:
+        if event.button() != Qt.MouseButton.LeftButton:
             super().mousePressEvent(event)
+            return
+
+        file_paths, _ = QFileDialog.getOpenFileNames(
+            self,
+            "Open Media File",
+            "",
+            Formats.ALL_MEDIA_IMPORT,
+        )
+
+        if file_paths:
+            self.filesSelected.emit(file_paths)
+
+        event.accept()

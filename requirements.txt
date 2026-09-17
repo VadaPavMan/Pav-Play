@@ -1,3 +1,3 @@
+# Pav Play runtime dependencies
 PySide6
-PyQt6
 mutagen==1.48.1

@@ -89,7 +89,7 @@ class SettingsPage(QWidget):
         for index, button in enumerate(self.categoryButtons):
             button.clicked.connect(lambda checked=False, i=index: self.showPage(i))
 
-        self.contentStack.setCurrentIndex(0)
+        self.showPage(0)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -114,10 +114,14 @@ class SettingsPage(QWidget):
         return button
 
     def showPage(self, index):
+        if not isinstance(index, int) or not 0 <= index < self.contentStack.count():
+            return False
+
         self._activeIndex = index
         self.contentStack.setCurrentIndex(index)
         for i, button in enumerate(self.categoryButtons):
             button.setChecked(i == index)
+        return True
 
     def applyTheme(self, colors):
         self.setStyleSheet(

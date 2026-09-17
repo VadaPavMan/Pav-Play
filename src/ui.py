@@ -32,6 +32,8 @@ from PySide6.QtGui import (
     QPainter,
     QPen,
     QBrush,
+    QKeySequence,
+    QShortcut,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -108,9 +110,7 @@ class MainUi(object):
 
         # Session playback positions used by the Resume Playback setting.
         self._sessionPositions = {}
-
-        # Resume requests are generation-based so an old media load can never
-        # restore its position into a newly opened file.
+        
         self._resumeRequestId = 0
         self._pendingResumeFile = None
         self._pendingResumePosition = None
@@ -122,7 +122,14 @@ class MainUi(object):
         QApplication.setEffectEnabled(Qt.UI_FadeTooltip, True)
 
     def setup(self, MainWindow):
+        # UI setup is intended to run once per MainUi instance.
+        # Ignore accidental repeated setup calls instead of duplicating widgets
+        # and signal connections.
+        if getattr(self, "_setupComplete", False):
+            return
+
         self.MainWindow = MainWindow
+        self._setupComplete = False
         self.setupWindow()
         # Main Layout
         self.setupMainLayout()
@@ -153,7 +160,9 @@ class MainUi(object):
 
         # Apply initial theme
         self.applyTheme()
+        self.setupKeyboardShortcuts()
         self.restoreSavedState()
+        self._setupComplete = True
 
     def setupWindow(self):
         if not self.MainWindow.objectName():
@@ -251,7 +260,7 @@ class MainUi(object):
         self.positionSlider = QSlider(Qt.Orientation.Horizontal)
         self.positionSlider.setRange(0, 1000)
         self.positionSlider.sliderMoved.connect(self.seekPosition)
-        self.positionSlider.setToolTip("Seek Slider")
+        self.positionSlider.setToolTip("Seek Slider (Left / Right: ±5 sec)")
         self.positionSlider.setStyleSheet(self.SliderStyle())
         self.totalTimeLabel = QLabel("0:00")
         self.totalTimeLabel.setToolTip("Duration Label")
@@ -268,7 +277,7 @@ class MainUi(object):
 
         self.volumeButton = self.controlButtons(Icons.SPEAKER)
         self.volumeButton.setIconSize(QSize(42, 42))
-        self.volumeButton.setToolTip("Volume: Mute / UnMute")
+        self.volumeButton.setToolTip("Volume: Mute / UnMute (M)")
         self.volumeButton.clicked.connect(self.toggleMute)
 
         # --  volume Slider
@@ -276,7 +285,7 @@ class MainUi(object):
         self.volumeSlider.setRange(0, 100)
         self.volumeSlider.setValue(100)
         self.volumeSlider.setFixedWidth(120)
-        self.volumeSlider.setToolTip("Volume Slider")
+        self.volumeSlider.setToolTip("Volume Slider (Up / Down: ±5%)")
         self.volumeSlider.valueChanged.connect(self.changeVolume)
 
         self.volumeLayout.addWidget(
@@ -309,7 +318,7 @@ class MainUi(object):
         self.playPauseButton = self.controlButtons(Icons.PLAY)
         self.playPauseButton.setFixedSize(80, 80)
         self.playPauseButton.setIconSize(QSize(68, 68))
-        self.playPauseButton.setToolTip("Play / Pause")
+        self.playPauseButton.setToolTip("Play / Pause (Space)")
         self.playPauseButton.clicked.connect(self.controller.togglePlayPause)
 
         # next button + connection
@@ -448,7 +457,7 @@ class MainUi(object):
             try:
                 if remembered_volume is not None:
                     volume = int(remembered_volume)
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 pass
         else:
             # Avoid bringing back an old remembered value if the user
@@ -1256,6 +1265,14 @@ class MainUi(object):
             self.restorePendingResumePosition()
             return
 
+        if status == QMediaPlayer.MediaStatus.InvalidMedia:
+            self._mediaLoadInProgress = False
+            self._pendingResumeFile = None
+            self._pendingResumePosition = None
+            self.playPauseButton.setIcon(QIcon(Icons.PLAY))
+            self.statusLabel.setText("Error: Invalid media")
+            return
+
         if status != QMediaPlayer.MediaStatus.EndOfMedia:
             return
 
@@ -1294,6 +1311,8 @@ class MainUi(object):
             return
 
         self._mediaLoadInProgress = False
+        self._pendingResumeFile = None
+        self._pendingResumePosition = None
         message = errorString.strip() if errorString else "Unable to play this media."
         self.statusLabel.setText(f"Playback error: {message}")
         self.playPauseButton.setIcon(QIcon(Icons.PLAY))
@@ -1315,7 +1334,19 @@ class MainUi(object):
         player = self.controller.mediaPlayer
         duration = player.duration()
 
-        if duration > 0 and player.isSeekable() and 0 < pending_position < duration:
+        if pending_position <= 0:
+            self._pendingResumeFile = None
+            self._pendingResumePosition = None
+            return
+
+        if duration > 0 and player.isSeekable():
+            # A saved position at/after the end of the file is not a useful
+            # resume point. Treat it as a fresh start instead of retrying.
+            if pending_position >= duration:
+                self._pendingResumeFile = None
+                self._pendingResumePosition = None
+                return
+
             player.setPosition(int(pending_position))
             self._pendingResumeFile = None
             self._pendingResumePosition = None
@@ -1359,13 +1390,13 @@ class MainUi(object):
     # File Selection + Sets Page According to Media Format...
     def onFileSelected(self, filePath):
         if not filePath:
-            return
+            return False
 
-        self.onFilesSelected([filePath])
+        return self.onFilesSelected([filePath])
 
     def onFilesSelected(self, file_paths):
         if not file_paths:
-            return
+            return False
 
         valid_paths = []
         seen = set()
@@ -1390,15 +1421,15 @@ class MainUi(object):
             valid_paths.append(file_path)
 
         if not valid_paths:
-            return
+            self.statusLabel.setText("No supported media files selected")
+            return False
 
         add_to_playlist = self._toBool(
             self.settingsManager.get("core/add_opened_files_to_playlist")
         )
 
         if not add_to_playlist:
-            self.playMedia(valid_paths[0])
-            return
+            return self.playMedia(valid_paths[0])
 
         first_item = None
 
@@ -1411,10 +1442,12 @@ class MainUi(object):
         if first_item is not None:
             self.currentIndex = self.playlistWidget.row(first_item)
             self.playlistWidget.setCurrentItem(first_item)
-            self.playMedia(first_item.data(Qt.ItemDataRole.UserRole))
+            return self.playMedia(first_item.data(Qt.ItemDataRole.UserRole))
+
+        return False
 
     def addFilesToPlaylist(self, file_paths):
-        self.onFilesSelected(file_paths)
+        return self.onFilesSelected(file_paths)
 
     def _getSupportedMediaFiles(self, folder_path):
         media_files = []
@@ -1438,12 +1471,29 @@ class MainUi(object):
         return media_files
 
     def playMedia(self, filePath):
-        if not filePath or not os.path.isfile(filePath):
-            return
+        if not isinstance(filePath, str) or not filePath:
+            self.statusLabel.setText("Error: No media file selected")
+            return False
+
+        filePath = os.path.abspath(filePath)
+        extension = os.path.splitext(filePath)[1].lower()
+
+        if not os.path.isfile(filePath):
+            self.statusLabel.setText("Error: Media file not found")
+            return False
+
+        if extension not in Formats.SUPPORTED_FORMATS_SET:
+            self.statusLabel.setText("Error: Unsupported media format")
+            return False
 
         self.currentFile = filePath
         self.file_name = os.path.basename(filePath)
         self._mediaLoadInProgress = True
+
+        # A resume request belongs only to the media load that created it.
+        # Clear any stale request before evaluating the new file's setting.
+        self._pendingResumeFile = None
+        self._pendingResumePosition = None
 
         self.positionSlider.blockSignals(True)
         self.positionSlider.setRange(0, 0)
@@ -1452,7 +1502,6 @@ class MainUi(object):
         self.currentTimeLabel.setText(formatTime(0))
         self.totalTimeLabel.setText(formatTime(0))
 
-        extension = os.path.splitext(filePath)[1].lower()
         audio_exts = Formats.AUDIOS
         video_exts = Formats.VIDEOS
 
@@ -1469,7 +1518,7 @@ class MainUi(object):
             QMessageBox.warning(
                 self.MainWindow, "Unsupported", "Unsupported media format."
             )
-            return
+            return False
 
         if isinstance(resume, str):
             resume = resume.strip().lower() in ("1", "true", "yes", "on")
@@ -1477,7 +1526,11 @@ class MainUi(object):
             resume = bool(resume)
 
         if resume and filePath in self._sessionPositions:
-            saved_position = int(self._sessionPositions[filePath])
+            try:
+                saved_position = int(self._sessionPositions[filePath])
+            except (TypeError, ValueError, OverflowError):
+                saved_position = 0
+
             if saved_position > 0:
                 self._pendingResumeFile = filePath
                 self._pendingResumePosition = saved_position
@@ -1493,9 +1546,7 @@ class MainUi(object):
         else:
             auto_play = bool(auto_play)
 
-        if self._toBool(self.settingsManager.get("core/remember_last_media")):
-            self.settingsManager.set("core/saved_last_media", filePath)
-        else:
+        if not self._toBool(self.settingsManager.get("core/remember_last_media")):
             self.settingsManager.settings.remove("core/saved_last_media")
 
         self._resumeRequestId += 1
@@ -1509,7 +1560,13 @@ class MainUi(object):
             self.playerStack.setCurrentWidget(self.musicPage)
         else:
             self._mediaLoadInProgress = False
-            return
+            self._pendingResumeFile = None
+            self._pendingResumePosition = None
+            return False
+
+        # Persist the last media only after the controller accepted the source.
+        if self._toBool(self.settingsManager.get("core/remember_last_media")):
+            self.settingsManager.set("core/saved_last_media", filePath)
 
         playlist_index = -1
         for index in range(self.playlistWidget.count()):
@@ -1540,6 +1597,7 @@ class MainUi(object):
             self.restorePendingResumePosition(request_id=request_id, attempts=40)
 
         self._mediaLoadInProgress = False
+        return True
 
     @staticmethod
     def _toBool(value):
@@ -1583,6 +1641,10 @@ class MainUi(object):
             self.settingsManager.set("core/saved_last_media", self.currentFile)
         else:
             self.settingsManager.settings.remove("core/saved_last_media")
+
+        # Flush final QSettings writes so close is deterministic even on a
+        # fast application shutdown.
+        self.settingsManager.settings.sync()
 
     def restoreSavedState(self):
         """Restore playlist/media state saved by the Core settings."""
@@ -1649,9 +1711,50 @@ class MainUi(object):
                 return
 
         self.saveApplicationState()
+        self.controller.stop()
         event.accept()
 
+    def setupKeyboardShortcuts(self):
+        self._shortcuts = []
+
+        def addShortcut(sequence, callback):
+            shortcut = QShortcut(QKeySequence(sequence), self.MainWindow)
+            shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+            shortcut.activated.connect(callback)
+            self._shortcuts.append(shortcut)
+
+        addShortcut("Space", self.controllerTogglePlayPause)
+        addShortcut("Right", lambda: self.seekBy(5000))
+        addShortcut("Left", lambda: self.seekBy(-5000))
+        addShortcut("Up", lambda: self.changeVolumeBy(5))
+        addShortcut("Down", lambda: self.changeVolumeBy(-5))
+        addShortcut("M", self.toggleMute)
+        addShortcut("N", self.playNext)
+        addShortcut("P", self.playPrevious)
+        addShortcut("S", self.toggleShuffle)
+        addShortcut("L", self.toggleLoop)
+        addShortcut("Ctrl+O", self.openFiles)
+        addShortcut("Ctrl+Shift+O", self.openFolder)
+
+    def seekBy(self, milliseconds):
+        if not self.currentFile:
+            return
+
+        player = self.controller.mediaPlayer
+        duration = player.duration()
+        if duration <= 0:
+            return
+
+        position = max(0, min(player.position() + milliseconds, duration))
+        player.setPosition(position)
+
+    def changeVolumeBy(self, amount):
+        value = max(0, min(100, self.volumeSlider.value() + amount))
+        self.volumeSlider.setValue(value)
+
     def controllerTogglePlayPause(self):
+        if not self.currentFile:
+            return
         self.controller.togglePlayPause()
 
     def setupPlaylistArea(self):
@@ -1859,7 +1962,15 @@ class MainUi(object):
 
         self.currentIndex = -1
         self.currentFile = None
+        self.file_name = "No track selected"
+        self._pendingResumeFile = None
+        self._pendingResumePosition = None
+        self._mediaLoadInProgress = False
+        self._resumeRequestId += 1
         self._resetShuffleState()
+
+
+        self.settingsManager.settings.remove("core/saved_last_media")
 
         self.playerStack.setCurrentIndex(0)
 
@@ -1868,14 +1979,32 @@ class MainUi(object):
         self.nextButton.setEnabled(False)
         self.positionSlider.setEnabled(False)
 
+        self.positionSlider.blockSignals(True)
+        self.positionSlider.setRange(0, 0)
         self.positionSlider.setValue(0)
-        self.currentTimeLabel.setText("0:00")
-        self.totalTimeLabel.setText("0:00")
+        self.positionSlider.blockSignals(False)
+        self.currentTimeLabel.setText(formatTime(0))
+        self.totalTimeLabel.setText(formatTime(0))
+        self.songNameLabel.setText(self.file_name)
+        self.artistInfoLabel.setText("Author Name: Unknown")
 
         self.statusLabel.setText("Ready")
         self.savePlaylistState()
+        return True
 
     def addPlaylistItem(self, file_path):
+        if not isinstance(file_path, str) or not file_path:
+            return None
+
+        file_path = os.path.abspath(file_path)
+        extension = os.path.splitext(file_path)[1].lower()
+
+        if not os.path.isfile(file_path):
+            return None
+
+        if extension not in Formats.SUPPORTED_FORMATS_SET:
+            return None
+
         # Check Duplicates
         for index in range(self.playlistWidget.count()):
             item = self.playlistWidget.item(index)
@@ -1898,15 +2027,23 @@ class MainUi(object):
         return item
 
     def playPlaylistItem(self, item):
+        if item is None:
+            return False
+
+        file_path = item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(file_path, str) or not os.path.isfile(file_path):
+            self.statusLabel.setText("Error: Media file not found")
+            return False
+
         self.currentIndex = self.playlistWidget.row(item)
+        if self.currentIndex < 0:
+            return False
 
         if self.shuffleList:
             self._resetShuffleState()
 
-        file_path = item.data(Qt.ItemDataRole.UserRole)
         self.playlistWidget.setCurrentItem(item)
-        self.playMedia(file_path)
-        print("Selected playlist file:", file_path)
+        return self.playMedia(file_path)
 
     def playNext(self):
         if self.playlistWidget.count() == 0:
@@ -1988,6 +2125,7 @@ class MainUi(object):
         media_files = self._getSupportedMediaFiles(folder_path)
 
         if not media_files:
-            return
+            self.statusLabel.setText("No supported media files found")
+            return False
 
-        self.onFilesSelected(media_files)
+        return self.onFilesSelected(media_files)

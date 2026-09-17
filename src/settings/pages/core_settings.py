@@ -1,11 +1,10 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSignalBlocker
 from PySide6.QtWidgets import QCheckBox, QFrame, QLabel, QVBoxLayout, QWidget
 
 from ..settings_manager import SettingsManager
 
 
 class CoreSettingsPage(QWidget):
-    """Core application behavior settings."""
 
     def __init__(self):
         super().__init__()
@@ -87,6 +86,13 @@ class CoreSettingsPage(QWidget):
         return bool(value)
 
     def _loadSettings(self):
+        blockers = [
+            QSignalBlocker(self.rememberLastMediaCheck),
+            QSignalBlocker(self.rememberLastPlaylistCheck),
+            QSignalBlocker(self.addOpenedFilesCheck),
+            QSignalBlocker(self.confirmBeforeExitCheck),
+        ]
+
         self.rememberLastMediaCheck.setChecked(
             self._toBool(self.settings.get("core/remember_last_media"))
         )
@@ -99,6 +105,8 @@ class CoreSettingsPage(QWidget):
         self.confirmBeforeExitCheck.setChecked(
             self._toBool(self.settings.get("core/confirm_before_exit"))
         )
+
+        del blockers
 
     def applyTheme(self, colors):
         text = colors["text"]

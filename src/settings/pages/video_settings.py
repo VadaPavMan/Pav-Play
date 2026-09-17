@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSignalBlocker
 from PySide6.QtWidgets import (
     QCheckBox,
     QFrame,
@@ -11,7 +11,6 @@ from ..settings_manager import SettingsManager
 
 
 class VideoSettingsPage(QWidget):
-    """Video playback settings."""
 
     def __init__(self):
         super().__init__()
@@ -74,6 +73,11 @@ class VideoSettingsPage(QWidget):
         return bool(value)
 
     def _loadSettings(self):
+        blockers = [
+            QSignalBlocker(self.autoPlayCheck),
+            QSignalBlocker(self.resumePlaybackCheck),
+        ]
+
         self.autoPlayCheck.setChecked(
             self._toBool(self.settings.get("video/auto_play"))
         )
@@ -81,12 +85,14 @@ class VideoSettingsPage(QWidget):
             self._toBool(self.settings.get("video/resume_playback"))
         )
 
+        del blockers
+
     def applyTheme(self, colors):
         text = colors["text"]
         secondary = colors.get("secondary_text", text)
         border = colors["border"]
         media = colors["media"]
-        hover = colors.get("hover", media)
+        hover = colors.get("button_hover", media)
 
         self.setStyleSheet(f"""
             QWidget#videoSettingsPage {{

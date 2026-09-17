@@ -1,45 +1,60 @@
 # 🎵 Pav Play
 
-Pav Play is a simple and lightweight **media player built with Python and PySide6**.
+Pav Play is a simple and lightweight **desktop multimedia player built with Python, PySide6, and Qt Multimedia**.
 
-The goal of this project is to create a clean desktop media player capable of playing both **audio and video files**, while providing features such as playlists, drag-and-drop support, media controls, and a modern user interface.
+It is designed to play local audio and video files while providing playlist management, drag-and-drop input, playback controls, theme switching, media information, persistent settings, and keyboard shortcuts.
 
-> ⚠️ **Project Status: Under Development**
+> ✅ **Project Status: v1 stabilization complete**
 >
-> Pav Play is currently being actively developed. Features, UI, project structure, and implementation may change frequently.
+> The main v1 feature set has been implemented and the project has gone through dedicated stabilization passes.
+> Phase 6 is reserved for architectural refactoring and broader codebase cleanup.
 
 ---
-
-## Screenshots:
-
-**_Dashboard Page Dark And Light Mode:_**
-![dashboardDark](screenshots/dashboardDark.png)
-![dashboardLight](screenshots/dashboardLight.png)
-
-**_Audio Page Dark And Light Mode:_**
-![audioPageDark](screenshots/audioPageDark.png)
-![audioPageLight](screenshots/audioPageLight.png)
-
-**_Video Page Dark And Light Mode:_**
-![videoPageDark](screenshots/videoPageDark.png)
-![videoPageLight](screenshots/videoPageLight.png)
 
 ## ✨ Current Features
 
 - 🎵 Audio playback
 - 🎬 Video playback
 - 📂 Open individual media files
-- 📁 Open folders containing media files
-- 🖱️ Drag and drop media files
+- 📁 Open folders containing supported media files
+- 🖱️ Drag and drop files and folders
 - 📃 Playlist support
 - ⏮️ Previous media
 - ▶️ Play / Pause
 - ⏭️ Next media
 - 🔊 Volume control
 - 🔇 Mute / Unmute
-- ⏱️ Media progress slider
-- 🌙 Theme toggle
+- ⏱️ Media progress and seeking
+- 🔀 Shuffle playback
+- 🔁 Loop Off / Loop Playlist / Loop One
+- 🌙 Light / Dark theme toggle
 - 📌 Currently playing media information
+- 🎼 Audio artist metadata display
+- ⚙️ Audio, Video, and Core settings
+- 💾 Persistent application settings
+- ▶️ Optional resume playback
+- 🧠 Optional last-media / playlist persistence
+- ⌨️ Playback and file-opening keyboard shortcuts
+- ⚠️ Playback and invalid-media error handling
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut           | Action                  |
+| ------------------ | ----------------------- |
+| `Space`            | Play / Pause            |
+| `←`                | Seek backward 5 seconds |
+| `→`                | Seek forward 5 seconds  |
+| `↑`                | Increase volume by 5%   |
+| `↓`                | Decrease volume by 5%   |
+| `M`                | Mute / Unmute           |
+| `N`                | Next media              |
+| `P`                | Previous media          |
+| `S`                | Toggle Shuffle          |
+| `L`                | Cycle Loop mode         |
+| `Ctrl + O`         | Open media files        |
+| `Ctrl + Shift + O` | Open folder             |
 
 ---
 
@@ -64,41 +79,115 @@ The goal of this project is to create a clean desktop media player capable of pl
 - `.ogg`
 - `.wma`
 
-> Actual playback support may depend on the multimedia backend available on the user's system.
+> Actual playback support can depend on the multimedia backend, codecs, and operating system.
 
 ---
 
 ## 🛠️ Built With
 
-- Python
-- PySide6
-- Qt Multimedia
+- **Python**
+- **PySide6**
+- **Qt Multimedia**
+- **Mutagen** for audio metadata
 
 ---
 
-## 📁 Project Status
+## 📸 Screenshots
 
-The project is currently focused on completing the first stable version.
+### Dashboard — Dark and Light
 
-Some parts of the codebase are still experimental and may be refactored later. A `TECH_DEBT.md` file is included to track areas planned for improvement.
+![dashboardDark](screenshots/dashboardDark.png)
+![dashboardLight](screenshots/dashboardLight.png)
+
+### Audio Page — Dark and Light
+
+![audioPageDark](screenshots/audioPageDark.png)
+![audioPageLight](screenshots/audioPageLight.png)
+
+### Video Page — Dark and Light
+
+![videoPageDark](screenshots/videoPageDark.png)
+![videoPageLight](screenshots/videoPageLight.png)
+
+### Settings Page - Dark and Light
+
+![settingPage1.png](screenshots/settingPage1.png)
+![settingPage2.png](screenshots/settingPage2.png)
+![settingPage3.png](screenshots/settingPage3.png)
+![settingPage4.png](screenshots/settingPage4.png)
+![settingPage5.png](screenshots/settingPage5.png)
+
+---
+
+## 📁 Project Structure
+
+```text
+Pav-Play/
+├── assets/
+├── controllers/
+│   ├── formatTime.py
+│   ├── metadata.py
+│   └── player_controller.py
+├── core/
+│   ├── formats.py
+│   └── link.py
+├── src/
+│   ├── icons.py
+│   ├── main.py
+│   ├── ui.py
+│   └── settings/
+│       ├── settings_page.py
+│       ├── settings_manager.py
+│       ├── settings_defaults.py
+│       └── pages/
+│           ├── audio_settings.py
+│           ├── video_settings.py
+│           ├── core_settings.py
+│           ├── help_page.py
+│           └── about_page.py
+├── widgets/
+│   └── drop_area.py
+├── test/
+├── CREDITS.md
+├── README.md
+├── requirements.txt
+└── TECH_DEBT.md
+```
 
 ---
 
 ## 🚀 Installation
 
-Clone the repository:
+### 1. Clone the repository
 
 ```bash
-git clone <https://github.com/VadaPavMan/Pav-Play>
+git clone https://github.com/VadaPavMan/Pav-Play.git
+cd Pav-Play
 ```
 
-Install dependencies:
+### 2. Create a virtual environment
+
+**Windows:**
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+.venv\Scripts\activate
 ```
 
-Run the application:
+**Linux / macOS:**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### 4. Run Pav Play
 
 ```bash
 python src/main.py
@@ -106,142 +195,63 @@ python src/main.py
 
 ---
 
-## 🔮 Planned Features
+## ⚙️ Settings
 
-- Improved audio player interface
-- Better video controls
-- Media metadata display
-- Album artwork
-- Improved playlist management
-- Keyboard shortcuts
-- Settings system
-- UI improvements and animations
-- Codebase refactoring
-- Better media format handling
+Pav Play includes separate settings for:
+
+### Audio
+
+- Auto Play
+- Resume Playback
+- Remember Playback Position
+- Default Volume
+- Remember Volume
+- Default Loop Mode
+- Default Shuffle
+
+### Video
+
+- Auto Play
+- Resume Playback
+
+### Core
+
+- Remember Last Media
+- Remember Last Playlist
+- Confirm Before Exit
+- Automatically Add Opened Files to Playlist
+
+Settings are persisted using Qt's settings system.
 
 ---
 
 ## 🤝 Contributing
 
-Pav Play is currently in active development. Contributions, suggestions, and feedback may be welcomed once the project reaches a more stable state.
+Pav Play is an open-source project.
+
+The first stable feature set is being maintained before the larger architecture refactor begins. See `TECH_DEBT.md` for the planned refactoring work and current technical debt.
 
 ---
 
 ## 📄 License
 
-License information will be added in a future release.
+Pav Play is released under the **MIT License**.
 
-+--------------------------------------------------------+
-| Menu Bar |
-+--------------------------------------------------------+
-| |
-| Album Art Song Name |
-| Artist |
-| |
-|--------------------------------------------------------|
-| |
-| Playlist (QListWidget) |
-| |
-| |
-| |
-|--------------------------------------------------------|
-| << ▶ >> -----------Slider----------- 03:20 |
-| |
-| Volume 🔊 --------Slider------------------- |
-+--------------------------------------------------------+
+---
 
-# Refactoring job
+## 🗺️ Development Roadmap
 
-PavPlay/
-│
-├── pavplay/
-│ ├── **init**.py
-│ ├── main.py
-│ │
-│ ├── ui/
-│ │ ├── main_window.py
-│ │ ├── controls_bar.py
-│ │ └── navigation_bar.py
-│ │
-│ ├── controllers/
-│ │ ├── player_controller.py
-│ │ └── playlist_controller.py
-│ │
-│ ├── widgets/
-│ │ └── drop_area.py
-│ │
-│ ├── models/
-│ │ └── media_item.py
-│ │
-│ └── core/
-│ ├── icons.py
-│ ├── formats.py
-│ └── settings.py
-│
-├── assets/
-├── tests/
-├── README.md
-├── CONTRIBUTING.md
-├── TECH_DEBT.md
-└── requirements.txt
-
-# Repo Link:
-
-`https://github.com/VadaPavMan/Pav-Play`
-
-# Dark And Light Mode:
-
-- Dark Mode:
-
-```
-- Window       #121212
-- Navigation   #1E1E1E
-- Player       #282828
-- Playlist     #1E1E1E
-- Controls     #1E1E1E
-- Text         #F2F2F2
-- Accent       #FF3344
+```text
+Phase 1  → Playlist behavior
+Phase 2  → Media opening / folders / drag & drop
+Phase 3  → Audio / video polish and media switching
+Phase 4  → Error handling / shortcuts / edge-case testing
+Phase 5  → v1 stabilization        ✅
+Phase 6  → Architecture refactor   → next
 ```
 
-- Light Mode:
+---
 
-```
-- Window       #F2F2F2
-- Navigation   #FFFFFF
-- Player       #E6E6E6
-- Playlist     #FFFFFF
-- Controls     #FFFFFF
-- Text         #181818
-- Accent       #FF3344
-```
+## 🔗 Repository
 
-
-
-PHASE 1
-├── Playlist behavior
-├── Next / Previous
-├── Shuffle
-├── Loop
-└── Current-item synchronization
-
-PHASE 2
-├── Media opening
-├── Folder loading
-├── Drag & Drop
-└── Core-setting integration
-
-PHASE 3
-├── Audio player polish
-├── Video player polish
-└── Media switching
-
-PHASE 4
-├── Error handling
-├── Keyboard shortcuts
-└── Edge-case testing
-
-PHASE 5
-└── v1 stabilization
-
-PHASE 6
-└── Architecture refactor
+https://github.com/VadaPavMan/Pav-Play

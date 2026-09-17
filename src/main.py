@@ -1,14 +1,15 @@
-from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel
-from icons import Icons
-import sys
 import os
+import sys
+os.environ.setdefault("QT_MULTIMEDIA_BACKEND", "ffmpeg")
+
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QApplication, QMainWindow
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from icons import Icons
 import ui
 
 

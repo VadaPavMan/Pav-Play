@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSignalBlocker
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -147,6 +147,16 @@ class AudioSettingsPage(QWidget):
             return default
 
     def _loadSettings(self):
+        blockers = [
+            QSignalBlocker(self.autoPlayCheck),
+            QSignalBlocker(self.resumePlaybackCheck),
+            QSignalBlocker(self.rememberPositionCheck),
+            QSignalBlocker(self.defaultVolumeSlider),
+            QSignalBlocker(self.rememberVolumeCheck),
+            QSignalBlocker(self.loopCombo),
+            QSignalBlocker(self.shuffleCheck),
+        ]
+
         self.autoPlayCheck.setChecked(
             self._toBool(self.settings.get("audio/auto_play"))
         )
@@ -174,6 +184,8 @@ class AudioSettingsPage(QWidget):
         self.shuffleCheck.setChecked(
             self._toBool(self.settings.get("audio/default_shuffle"))
         )
+
+        del blockers
 
     def _saveDefaultVolume(self, value):
         self._updateVolumeLabel(value)
