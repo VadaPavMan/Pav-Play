@@ -246,8 +246,19 @@ Phase 1  → Playlist behavior
 Phase 2  → Media opening / folders / drag & drop
 Phase 3  → Audio / video polish and media switching
 Phase 4  → Error handling / shortcuts / edge-case testing
-Phase 5  → v1 stabilization        ✅
+Phase 5  → v1 stabilization       
 Phase 6  → Architecture refactor   → next
+```
+
+```
+pavplay/
+├── __init__.py
+├── main.py
+├── ui/
+├── controllers/
+├── widgets/
+├── models/
+└── core/
 ```
 
 ---
@@ -255,3 +266,79 @@ Phase 6  → Architecture refactor   → next
 ## 🔗 Repository
 
 https://github.com/VadaPavMan/Pav-Play
+
+## Project Structure
+```
+PavPlay/
+│
+├── assets/
+│   ├── controls/
+│   ├── hero/
+│   ├── nav/
+│   ├── playlist/
+│   └── credits/
+│
+├── src/
+│   ├── __init__.py
+│   ├── main.py
+│   │
+│   ├── ui/
+│   │   ├── __init__.py
+│   │   ├── main_window.py
+│   │   ├── navigation_bar.py
+│   │   ├── player_view.py
+│   │   ├── controls_bar.py
+│   │   └── playlist_panel.py
+│   │
+│   ├── settings/
+│   │   ├── __init__.py
+│   │   ├── settings_page.py
+│   │   ├── settings_manager.py
+│   │   ├── settings_defaults.py
+│   │   └── pages/
+│   │       ├── __init__.py
+│   │       ├── audio_settings.py
+│   │       ├── video_settings.py
+│   │       ├── core_settings.py
+│   │       ├── help_page.py
+│   │       └── about_page.py
+│   │
+│   └── styles/
+│       ├── dark.qss
+│       └── light.qss
+│
+├── controllers/
+│   ├── __init__.py
+│   ├── application_controller.py
+│   ├── player_controller.py
+│   └── playlist_controller.py
+│
+├── models/
+│   ├── __init__.py
+│   └── media_item.py
+│
+├── core/
+│   ├── __init__.py
+│   ├── formats.py
+│   ├── paths.py
+│   ├── constants.py
+│   └── theme_manager.py
+│
+├── utils/
+│   ├── __init__.py
+│   ├── format_time.py
+│   └── metadata.py
+│
+├── widgets/
+│   ├── __init__.py
+│   └── drop_area.py
+│
+├── test/
+│   └── ...
+│
+├── CREDITS.md
+├── README.md
+├── TECH_DEBT.md
+├── ARCHITECTURE.md
+└── requirements.txt
+```
