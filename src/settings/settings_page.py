@@ -17,7 +17,7 @@ from .pages import (
     AboutPage,
 )
 
-from icons import Icons
+from src.icons import Icons
 
 
 class SettingsPage(QWidget):

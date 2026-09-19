@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt, QSignalBlocker
 from PySide6.QtWidgets import QCheckBox, QFrame, QLabel, QVBoxLayout, QWidget
 
-from ..settings_manager import SettingsManager
+from src.settings.settings_manager import SettingsManager
 
 
 class CoreSettingsPage(QWidget):

@@ -1,6 +1,6 @@
 from PySide6.QtCore import QSettings
 
-from .settings_defaults import DEFAULT_SETTINGS
+from src.settings.settings_defaults import DEFAULT_SETTINGS
 
 
 class SettingsManager:

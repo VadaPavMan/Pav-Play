@@ -69,11 +69,11 @@ from widgets.drop_area import DropArea
 from controllers.player_controller import PlayerController
 from controllers.formatTime import formatTime
 from controllers.metadata import get_artist
-from icons import Icons
+from src.icons import Icons
 from core.formats import Formats
 from core.link import Link
-from settings.settings_page import SettingsPage
-from settings.settings_manager import SettingsManager
+from src.settings.settings_page import SettingsPage
+from src.settings.settings_manager import SettingsManager
 
 WIDTH = 1280
 HEIGHT = 720
@@ -788,8 +788,6 @@ class MainUi(object):
         if colors is None:
             colors = self.getThemeColors()
 
-        # Named selectors are intentional: styling generic QFrame/QWidget here
-        # can paint over child widgets and make rounded corners look square.
         self.centralWidget.setStyleSheet(
             f"QWidget#centralWidget {{ background-color: {colors['window']}; border: none; }}"
         )
@@ -891,8 +889,6 @@ class MainUi(object):
                 "QFrame#nowPlayingFrame { background: transparent; border: none; }"
             )
 
-        # Audio-page cards intentionally keep the same colors in both themes.
-        # Do not rebuild these styles on every animation frame. They never change.
         if not animationFrame:
             self.nowPlayingTitle.setStyleSheet("""
                 QLabel {

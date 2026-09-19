@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..settings_manager import SettingsManager
+from src.settings.settings_manager import SettingsManager
 
 
 class AudioSettingsPage(QWidget):

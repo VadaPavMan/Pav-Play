@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from icons import Icons
+from src.icons import Icons
 
 
 class HelpPage(QWidget):

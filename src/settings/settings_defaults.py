@@ -1,9 +1,3 @@
-"""Default values for Pav Play settings.
-
-The first stable build only establishes the settings framework.  These values
-are kept here so actual setting controls can be added without scattering
-hard-coded defaults throughout the UI.
-"""
 
 DEFAULT_SETTINGS = {
     # Audio
